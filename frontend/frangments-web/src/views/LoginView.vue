@@ -1,21 +1,23 @@
 <template>
-  <div class="login">
-    <h1>Fragments</h1>
-    <p class="subtitle">inicia sesion tal no se que.</p>
+  <div class="login-container">
+    <div class="login">
+      <h1>Fragments</h1>
+      <p class="subtitle">Login</p>
 
-    <form class="login-form" @submit.prevent="handleLogin">
-      <label>
-        email tal
-        <input v-model="email" type="email" required />
-      </label>
+      <form class="login-form" @submit.prevent="handleLogin">
+        <label>
+          Email
+          <input v-model="email" type="email" required />
+        </label>
 
-      <label>
-        contraseñi
-        <input v-model="password" type="password" required />
-      </label>
+        <label>
+          Password
+          <input v-model="password" type="password" required />
+        </label>
 
-      <button type="submit">Entrar</button>
-    </form>
+        <button type="submit">Entrar</button>
+      </form>
+    </div>
   </div>
 </template>
 
@@ -38,7 +40,7 @@ const handleLogin = () => {
 .login {
   max-width: 400px;
   margin: 4rem auto;
-  background: #1f2937;
+  background: #324663;
   padding: 2rem;
   border-radius: 1rem;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
@@ -67,5 +69,11 @@ button {
   border-radius: 0.5rem;
   font-weight: 600;
   cursor: pointer;
+}
+.login-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #ffffff, #8ca6f7);
+  font-family: "Inter", sans-serif;
+  padding: 1rem;
 }
 </style>
