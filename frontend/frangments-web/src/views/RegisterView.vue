@@ -70,6 +70,14 @@ const registerUser = () => {
     errorMessage.value = "Las contraseñas no coinciden.";
     return;
   }
+  
+// Verificar teléfono (solo números y longitud)
+const regexTelefono = /^[0-9]{9}$/; // acepta solo dígitos entre 9 y 15
+  if (!regexTelefono.test(form.value.telefono)) {
+    errorMessage.value =
+      "El teléfono debe contener solo números de 9 dígitos.";
+    return;
+  }
 
   errorMessage.value = "";
 
