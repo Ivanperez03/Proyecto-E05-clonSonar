@@ -1,7 +1,7 @@
 <template>
   <div class="dash">
     <h2>Panel Fragments</h2>
-    <p class="subtitle">soy gay jiji.</p>
+    <p class="subtitle">Welcome.</p>
 
     <section class="cards">
       <article class="card">
@@ -9,7 +9,7 @@
         <p>{{ users.length }}</p>
       </article>
       <article class="card">
-        <h3>bombis</h3>
+        <h3>Grupos</h3>
         <p>0</p>
       </article>
     </section>
