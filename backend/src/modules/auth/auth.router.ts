@@ -1,9 +1,4 @@
 import { Router } from 'express';
-
-export const authRouter = Router();
-
-authRouter.post('/login', (_req, res) => {
-  // TODO: login real más adelante (JWT, etc.)
-  res.json({ message: 'login no implementado aún' });
-});
-
+const r = Router();
+// aquí podrías mover /login si prefieres /api/auth/login
+export default r;

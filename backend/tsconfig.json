@@ -1,15 +1,14 @@
 {
-  // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
-    // File Layout
+    "target": "ES2022",
     "module": "CommonJS",
-    "target": "ES2020",
-    "rootDir": "src",
     "outDir": "dist",
+    "rootDir": ".",
     "strict": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true, 
-    "forceConsistentCasingInFileNames": true
-  }, 
-  "include": ["src"]
+    "esModuleInterop": true,
+    "moduleResolution": "Node",
+    "types": ["node"],              // <-- clave
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts", "server.ts"]
 }

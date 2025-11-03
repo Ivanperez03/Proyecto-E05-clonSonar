@@ -1,20 +1,12 @@
 import express from 'express';
 import cors from 'cors';
-import { router } from './routes/index';
-import { errorHandler } from './middleware/errorHandler';
+import { ENV } from './config/env';
+import { registerRoutes } from './routes';
 
-export const app = express();
-
-app.use(cors());
+const app = express();
+app.use(cors({ origin: ENV.WEB_ORIGIN, credentials: true }));
 app.use(express.json());
 
-// Rutas principales bajo /api
-app.use('/api', router);
+registerRoutes(app);
 
-// Healthcheck
-app.get('/health', (_req, res) => {
-  res.json({ ok: true });
-});
-
-// Middleware de errores (ultimo si o si )
-app.use(errorHandler);
+export default app;

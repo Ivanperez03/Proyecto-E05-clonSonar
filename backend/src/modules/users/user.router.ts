@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { getUsersController } from './user.controller';
+import { userController } from './user.controller';
 
-export const userRouter = Router();
-
-userRouter.get('/', getUsersController);
-
+const r = Router();
+r.post('/', userController.register);     // POST /api/users
+r.post('/login', userController.login);   // POST /api/users/login  (opcional)
+export default r;

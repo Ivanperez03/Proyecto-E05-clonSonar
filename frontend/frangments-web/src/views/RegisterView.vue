@@ -48,15 +48,17 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
+import axios from "axios";
 
 const router = useRouter();
+const API = "/api";
 
 const form = ref({
   nombre: "",
-  apellidos: "",
+  apellidos: "",       // puedes mostrarlo, pero NO lo enviamos a la API
   email: "",
   telefono: "",
   password: "",
@@ -65,32 +67,44 @@ const form = ref({
 
 const errorMessage = ref("");
 
-const registerUser = () => {
+const registerUser = async () => {
+  // Validaciones básicas
   if (form.value.password !== form.value.confirmPassword) {
     errorMessage.value = "Las contraseñas no coinciden.";
     return;
   }
-  
-// Verificar teléfono (solo números y longitud)
-const regexTelefono = /^[0-9]{9}$/; // acepta solo dígitos entre 9 y 15
+  const regexTelefono = /^[0-9]{9}$/;
   if (!regexTelefono.test(form.value.telefono)) {
-    errorMessage.value =
-      "El teléfono debe contener solo números de 9 dígitos.";
+    errorMessage.value = "El teléfono debe contener solo números de 9 dígitos.";
     return;
   }
 
   errorMessage.value = "";
 
-  // Aquí iría la lógica de registro real (API, Firebase, etc.)
-  console.log("Datos del registro:", form.value);
+  try {
+    await axios.post(`${API}/users`, {
+      nombre: form.value.nombre,
+      email: form.value.email,
+      telefono: form.value.telefono,
+      password: form.value.password,
+    });
+    router.push("/login");
+  } catch (e: any) {
+  console.error("AXIOS ERROR:",
+    e?.message,
+    e?.code,
+    e?.response?.status,
+    e?.response?.data
+  );
+  errorMessage.value =
+    e?.response?.data?.message ??
+    e?.message ??
+    "Error registrando usuario";
+}
 
-  // Redirigir al home o login
-  router.push("/dashboard");
 };
 
-const goToSignIn = () => {
-  router.push("/login");
-};
+const goToSignIn = () => router.push("/login");
 </script>
 
 <style scoped>

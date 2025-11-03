@@ -1,9 +1,8 @@
-import { Router } from 'express';
-import { userRouter } from '../modules/users/user.router';
-import { authRouter } from '../modules/auth/auth.router';
+import { Application } from 'express';
+import userRouter from '../modules/users/user.router';
+// import authRouter from '../modules/auth/auth.router';
 
-export const router = Router();
-
-router.use('/users', userRouter);
-router.use('/auth', authRouter);
-
+export function registerRoutes(app: Application) {
+  app.use('/api/users', userRouter);
+  // app.use('/api/auth', authRouter);
+}
