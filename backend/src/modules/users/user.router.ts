@@ -3,5 +3,5 @@ import { userController } from './user.controller';
 
 const r = Router();
 r.post('/', userController.register);     // POST /api/users
-r.post('/login', userController.login);   // POST /api/users/login  (opcional)
+r.post('/login', userController.login);   // POST /api/users/login  
 export default r;

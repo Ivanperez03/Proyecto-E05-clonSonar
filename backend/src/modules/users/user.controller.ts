@@ -18,11 +18,13 @@ export const userController = {
   async login(req: Request, res: Response) {
     try {
       const { email, password } = req.body;
-      if (!email || !password) return res.status(400).json({ message: 'Faltan campos' });
+      if (!email || !password)
+        return res.status(400).json({ message: "Faltan campos" });
+
       const user = await userService.login(email, password);
       res.json(user);
     } catch {
-      res.status(401).json({ message: 'Credenciales inválidas' });
+      res.status(401).json({ message: "Credenciales inválidas" });
     }
-  },
+  }
 };

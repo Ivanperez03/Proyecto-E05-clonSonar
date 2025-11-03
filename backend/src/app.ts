@@ -4,8 +4,9 @@ import { ENV } from './config/env';
 import { registerRoutes } from './routes';
 
 const app = express();
-app.use(cors({ origin: ENV.WEB_ORIGIN, credentials: true }));
+app.use(cors());
 app.use(express.json());
+
 
 registerRoutes(app);
 

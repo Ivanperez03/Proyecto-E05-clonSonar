@@ -24,15 +24,28 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
+import axios from "axios";
 
 const email = ref("");
 const password = ref("");
 const router = useRouter();
 
-const handleLogin = () => {
-  // aquí luego llamas a tu backend: POST http://localhost:3000/api/auth/login
-  console.log("login", email.value, password.value);
-  router.push("/dashboard");
+const API = "/api";
+
+const handleLogin = async () => {
+  try {
+    const { data } = await axios.post(`${API}/users/login`, {
+      email: email.value,
+      password: password.value,
+    });
+
+    // Guardamos usuario temporalmente en localStorage
+    localStorage.setItem("user", JSON.stringify(data));
+
+    router.push("/dashboard");
+  } catch (e: any) {
+    alert(e?.response?.data?.message ?? "Error iniciando sesión");
+  }
 };
 </script>
 

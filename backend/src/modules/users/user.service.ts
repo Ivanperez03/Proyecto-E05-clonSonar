@@ -11,10 +11,12 @@ export const userService = {
 
   async login(email: string, password: string) {
     const u = await userRepo.findByEmail(email);
-    if (!u?.contrasena) throw new Error('Credenciales inválidas');
+    if (!u?.contrasena) throw new Error("Credenciales inválidas");
+
     const ok = await bcrypt.compare(password, u.contrasena);
-    if (!ok) throw new Error('Credenciales inválidas');
-    const { contrasena, ...safe } = u as any;
-    return safe;
+    if (!ok) throw new Error("Credenciales inválidas");
+
+    const { contrasena, ...safe } = u;
+    return safe; // devolvemos los datos del usuario sin contraseña
   },
 };
