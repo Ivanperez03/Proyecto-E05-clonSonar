@@ -6,3 +6,4 @@ import { testDB } from './src/config/db';
   await testDB();
   app.listen(ENV.PORT, () => console.log(`API escuchando en :${ENV.PORT}`));
 })();
+//cambio de comprobación
