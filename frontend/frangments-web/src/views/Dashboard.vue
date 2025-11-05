@@ -22,41 +22,59 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import apiax from "../apiAxios"; // 🔹 ruta actualizada al cliente Axios
+import apiax from "../apiAxios"; // ✅ cliente axios configurado con cookies
 
 const router = useRouter();
 const user = ref<any>(null);
 const users = ref<any[]>([]);
+let checkInterval: any = null;
 
-// Obtener usuario logeado y lista de usuarios
+// 🔹 Cargar datos protegidos y verificar sesión
 onMounted(async () => {
   try {
-    // ⚡ Trae el usuario logeado usando la cookie
     const { data: userData } = await apiax.get("/users/me");
     user.value = userData.user;
 
-    // Trae todos los usuarios
     const { data: usersData } = await apiax.get("/users");
     users.value = usersData;
   } catch (err) {
-    console.error("Error cargando datos", err);
-    router.push({ name: "login" }); // si falla, redirige al login
+    console.error("Error cargando datos:", err);
+    router.push({ name: "login" });
   }
+
+  // 🕒 Comprobar token cada 30 segundos
+  checkInterval = setInterval(checkSession, 30000);
 });
 
-// Logout
-const logout = async () => {
+onUnmounted(() => {
+  if (checkInterval) clearInterval(checkInterval);
+});
+
+// 🔒 Verifica si el token sigue siendo válido
+async function checkSession() {
   try {
-    await api.post("/users/logout"); // opcional: backend borra cookie
+    await apiax.get("/users/me");
+  } catch (err: any) {
+    if (err.response?.status === 401) {
+      console.warn("⚠️ Token expirado. Cerrando sesión...");
+      logout();
+    }
+  }
+}
+
+// 🚪 Logout (también se usa al expirar el token)
+async function logout() {
+  try {
+    await apiax.post("/users/logout"); // si no existe el endpoint, no pasa nada
   } catch {
-    // aunque falle, seguimos con logout local
+    // ignoramos errores
   } finally {
     localStorage.removeItem("user");
     router.push({ name: "login" });
   }
-};
+}
 </script>
 
 <style scoped>
