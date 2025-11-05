@@ -25,7 +25,7 @@ export const userRepo = {
 
   async findByEmail(email: string) {
     const { rows } = await db.query<UserRow & { contrasena: string }>(
-      'SELECT id_usuario, nombre, mail, telefono, contrasena FROM usuario WHERE mail=$1',
+      "SELECT id_usuario, nombre, mail, telefono, contrasena FROM usuario WHERE LOWER(mail)=LOWER($1)",
       [email]
     );
     return rows[0] ?? null;
