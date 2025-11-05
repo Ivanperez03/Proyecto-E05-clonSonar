@@ -24,37 +24,39 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import apiax from "../apiAxios"; // 🔹 ruta actualizada al cliente Axios
 
 const router = useRouter();
-
-// “Sesión” simple sin tokens
 const user = ref<any>(null);
-try {
-  const raw = localStorage.getItem("user");
-  user.value = raw ? JSON.parse(raw) : null;
-} catch {
-  user.value = null;
-}
-
 const users = ref<any[]>([]);
 
-function logout() {
-  localStorage.removeItem("user");
-  router.push({ name: "login" });
-}
-
+// Obtener usuario logeado y lista de usuarios
 onMounted(async () => {
   try {
-    // Usa el proxy de Vite
-    const res = await fetch("/api/users");
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    users.value = await res.json();
+    // ⚡ Trae el usuario logeado usando la cookie
+    const { data: userData } = await apiax.get("/users/me");
+    user.value = userData.user;
+
+    // Trae todos los usuarios
+    const { data: usersData } = await apiax.get("/users");
+    users.value = usersData;
   } catch (err) {
-    console.error("Error cargando usuarios", err);
-    // Si algo falla y no hay sesión, vete a login (defensivo)
-    if (!user.value) router.push({ name: "login" });
+    console.error("Error cargando datos", err);
+    router.push({ name: "login" }); // si falla, redirige al login
   }
 });
+
+// Logout
+const logout = async () => {
+  try {
+    await api.post("/users/logout"); // opcional: backend borra cookie
+  } catch {
+    // aunque falle, seguimos con logout local
+  } finally {
+    localStorage.removeItem("user");
+    router.push({ name: "login" });
+  }
+};
 </script>
 
 <style scoped>
