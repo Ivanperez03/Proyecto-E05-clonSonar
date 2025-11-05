@@ -3,6 +3,7 @@ import LoginView from "@/views/LoginView.vue";
 import DashboardView from "@/views/Dashboard.vue";
 import HomeView from "@/views/HomeView.vue";
 import RegisterView from "@/views/RegisterView.vue";
+import apiax from "@/apiAxios"; // ⚡ cliente Axios con cookies
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -16,13 +17,13 @@ const router = createRouter({
       path: "/dashboard",
       name: "dashboard",
       component: DashboardView,
-      meta: { requiresAuth: true }, // 🔒 necesita estar logeado
+      meta: { requiresAuth: true },
     },
     {
       path: "/login",
       name: "login",
       component: LoginView,
-      meta: { guestOnly: true }, // 👤 solo si NO está logeado
+      meta: { guestOnly: true },
     },
     { 
       path: "/register",
@@ -33,19 +34,39 @@ const router = createRouter({
   ],
 });
 
-// 🚧 Guardia de navegación global
-router.beforeEach((to) => {
-  const user = localStorage.getItem("user"); // simulamos sesión
-  const isAuth = !!user;
-  if (to.meta.requiresAuth && !isAuth) {
-    // Si intenta entrar al dashboard sin estar logeado → redirige al login
-    return { name: "login" };
+// 🚧 Guardia global de autenticación
+router.beforeEach(async (to) => {
+  try {
+    const { data } = await apiax.get("/users/me");
+    const isAuth = !!data?.user;
+
+    if (to.meta.requiresAuth && !isAuth) {
+      // 🔒 quiere entrar a una ruta protegida sin login
+      return { name: "login" };
+    }
+
+    if (to.name === "register" && isAuth) {
+      // 🧹 si está logueado pero entra a "register", cerramos sesión
+      try {
+        await apiax.post("/users/logout");
+      } catch {
+        /* ignoramos error */
+      }
+      localStorage.removeItem("user");
+      return true; // le dejamos continuar al registro
+    }
+
+    if (to.meta.guestOnly && isAuth && to.name !== "register") {
+      // ⚡ si intenta ir a login estando logueado → dashboard
+      return { name: "dashboard" };
+    }
+
+    return true;
+  } catch {
+    // 🧨 token inválido o expirado
+    if (to.meta.requiresAuth) return { name: "login" };
+    return true;
   }
-  if (to.meta.guestOnly && isAuth) {
-    // Si ya está logeado y va a login o register → redirige al dashboard
-    return { name: "dashboard" };
-  }
-  return true;
 });
 
 export default router;

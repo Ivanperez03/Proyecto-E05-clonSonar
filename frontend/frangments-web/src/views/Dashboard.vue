@@ -22,39 +22,59 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import apiax from "../apiAxios"; // ✅ cliente axios configurado con cookies
 
 const router = useRouter();
-
-// “Sesión” simple sin tokens
 const user = ref<any>(null);
-try {
-  const raw = localStorage.getItem("user");
-  user.value = raw ? JSON.parse(raw) : null;
-} catch {
-  user.value = null;
-}
-
 const users = ref<any[]>([]);
+let checkInterval: any = null;
 
-function logout() {
-  localStorage.removeItem("user");
-  router.push({ name: "login" });
-}
-
+// 🔹 Cargar datos protegidos y verificar sesión
 onMounted(async () => {
   try {
-    // Usa el proxy de Vite
-    const res = await fetch("/api/users");
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    users.value = await res.json();
+    const { data: userData } = await apiax.get("/users/me");
+    user.value = userData.user;
+
+    const { data: usersData } = await apiax.get("/users");
+    users.value = usersData;
   } catch (err) {
-    console.error("Error cargando usuarios", err);
-    // Si algo falla y no hay sesión, vete a login (defensivo)
-    if (!user.value) router.push({ name: "login" });
+    console.error("Error cargando datos:", err);
+    router.push({ name: "login" });
   }
+
+  // 🕒 Comprobar token cada 30 segundos
+  checkInterval = setInterval(checkSession, 30000);
 });
+
+onUnmounted(() => {
+  if (checkInterval) clearInterval(checkInterval);
+});
+
+// 🔒 Verifica si el token sigue siendo válido
+async function checkSession() {
+  try {
+    await apiax.get("/users/me");
+  } catch (err: any) {
+    if (err.response?.status === 401) {
+      console.warn("⚠️ Token expirado. Cerrando sesión...");
+      logout();
+    }
+  }
+}
+
+// 🚪 Logout (también se usa al expirar el token)
+async function logout() {
+  try {
+    await apiax.post("/users/logout"); // si no existe el endpoint, no pasa nada
+  } catch {
+    // ignoramos errores
+  } finally {
+    localStorage.removeItem("user");
+    router.push({ name: "login" });
+  }
+}
 </script>
 
 <style scoped>

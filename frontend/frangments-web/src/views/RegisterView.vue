@@ -51,14 +51,13 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import axios from "axios";
+import apiax from "../apiAxios"; // 🔹 usamos el cliente Axios con cookies
 
 const router = useRouter();
-const API = "/api";
 
 const form = ref({
   nombre: "",
-  apellidos: "",       // puedes mostrarlo, pero NO lo enviamos a la API
+  apellidos: "",
   email: "",
   telefono: "",
   password: "",
@@ -73,6 +72,7 @@ const registerUser = async () => {
     errorMessage.value = "Las contraseñas no coinciden.";
     return;
   }
+
   const regexTelefono = /^[0-9]{9}$/;
   if (!regexTelefono.test(form.value.telefono)) {
     errorMessage.value = "El teléfono debe contener solo números de 9 dígitos.";
@@ -82,32 +82,28 @@ const registerUser = async () => {
   errorMessage.value = "";
 
   try {
-    await axios.post(`${API}/users`, {
+    await apiax.post("/users", {
       nombre: form.value.nombre,
       email: form.value.email,
       telefono: form.value.telefono,
       password: form.value.password,
     });
+
     router.push("/login");
   } catch (e: any) {
-  console.error("AXIOS ERROR:",
-    e?.message,
-    e?.code,
-    e?.response?.status,
-    e?.response?.data
-  );
-  errorMessage.value =
-    e?.response?.data?.message ??
-    e?.message ??
-    "Error registrando usuario";
-}
-
+    console.error("AXIOS ERROR:", e?.message, e?.code, e?.response?.status, e?.response?.data);
+    errorMessage.value =
+      e?.response?.data?.message ??
+      e?.message ??
+      "Error registrando usuario";
+  }
 };
 
 const goToSignIn = () => router.push("/login");
 </script>
 
 <style scoped>
+/* Tu CSS existente */
 .register-container {
   display: flex;
   justify-content: center;

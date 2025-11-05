@@ -1,5 +1,8 @@
 import { Request, Response } from 'express';
 import { userService } from './user.service';
+import jwt from "jsonwebtoken";
+import { ENV } from '../../config/env';
+
 
 export const userController = {
   async register(req: Request, res: Response) {
@@ -22,7 +25,28 @@ export const userController = {
         return res.status(400).json({ message: "Faltan campos" });
 
       const user = await userService.login(email, password);
-      res.json(user);
+      const token = jwt.sign(
+        { id: user.id, email: user.email },
+        ENV.JWT_SECRET as string,
+        { expiresIn: "1m" }
+      );
+      // Devolver token + datos del usuario (sin contraseña)
+      res
+      .cookie("token", token, {
+        httpOnly: true,    // 🔒 no accesible desde JS
+        secure: false,     // 🔐 cambia a true en producción (HTTPS)
+        sameSite: "lax",   // o "none" si usas dominios diferentes
+        maxAge: 60 * 1000  // 1 minuto en milisegundos
+      })
+      .json({
+        message: "Inicio de sesión correcto",
+        user: {
+          id: user.id,
+          nombre: user.nombre,
+          email: user.email,
+          telefono: user.telefono,
+        },
+      });
     } catch {
       res.status(401).json({ message: "Credenciales inválidas" });
     }
