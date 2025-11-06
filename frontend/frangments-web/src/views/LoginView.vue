@@ -122,7 +122,7 @@ button:hover {
 }
 
 .error-message {
-  color: #e63946; /* 🔴 rojo brillante */
+  color: #e63946; 
   font-weight: 600;
   text-align: center;
   margin-top: 8px;

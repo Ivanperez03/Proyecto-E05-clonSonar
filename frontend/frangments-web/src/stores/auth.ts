@@ -1,4 +1,3 @@
-// src/stores/auth.ts
 import { defineStore } from "pinia";
 import { authService } from "@/api/auth.service";
 import { User } from "@/domain/user";

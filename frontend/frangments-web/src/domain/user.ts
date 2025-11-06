@@ -7,7 +7,7 @@ export class User {
   ) {}
 
   static fromDTO(d: any) {
-    // Ajusta estas claves si tu backend usa otros nombres
-    return new User(d.id ?? d.id_usuario, d.nombre, d.email ?? d.mail, d.telefono);
+    return new User(d.id ?? d.id_usuario, d.nombre, 
+      d.email ?? d.mail, d.telefono);
   }
 }

@@ -3,7 +3,6 @@ import LoginView from "@/views/LoginView.vue";
 import DashboardView from "@/views/Dashboard.vue";
 import HomeView from "@/views/HomeView.vue";
 import RegisterView from "@/views/RegisterView.vue";
-import apiax from "@/apiAxios"; // ⚡ cliente Axios con cookies
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
