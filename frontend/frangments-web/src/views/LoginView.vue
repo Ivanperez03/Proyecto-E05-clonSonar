@@ -16,6 +16,7 @@
         </label>
 
         <button type="submit">Entrar</button>
+        <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
       </form>
     </div>
   </div>
@@ -24,6 +25,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
+const errorMessage = ref("");
 import { useAuthStore } from "@/stores/auth";
 
 const email = ref("");
@@ -32,8 +34,12 @@ const router = useRouter();
 const auth = useAuthStore();
 
 const handleLogin = async () => {
-  await auth.login(email.value, password.value);
-  router.push({ name: "dashboard" }); 
+  try {
+    await auth.login(email.value, password.value);
+    router.push({ name: "dashboard" }); 
+  } catch (e: any){ 
+    errorMessage.value = e?.response?.data?.message ?? "Correo o contraseña incorrectos";
+  }
 };
 </script>
 
@@ -114,4 +120,12 @@ button {
 button:hover {
   background: #3b5aa3;
 }
+
+.error-message {
+  color: #e63946; /* 🔴 rojo brillante */
+  font-weight: 600;
+  text-align: center;
+  margin-top: 8px;
+}
+
 </style>
