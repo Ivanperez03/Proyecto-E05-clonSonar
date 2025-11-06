@@ -34,39 +34,20 @@ const router = createRouter({
   ],
 });
 
-// 🚧 Guardia global de autenticación
+import { useAuthStore } from "@/stores/auth";
+
 router.beforeEach(async (to) => {
-  try {
-    const { data } = await apiax.get("/users/me");
-    const isAuth = !!data?.user;
+  const auth = useAuthStore();
 
-    if (to.meta.requiresAuth && !isAuth) {
-      // 🔒 quiere entrar a una ruta protegida sin login
-      return { name: "login" };
-    }
-
-    if (to.name === "register" && isAuth) {
-      // 🧹 si está logueado pero entra a "register", cerramos sesión
-      try {
-        await apiax.post("/users/logout");
-      } catch {
-        /* ignoramos error */
-      }
-      localStorage.removeItem("user");
-      return true; // le dejamos continuar al registro
-    }
-
-    if (to.meta.guestOnly && isAuth && to.name !== "register") {
-      // ⚡ si intenta ir a login estando logueado → dashboard
-      return { name: "dashboard" };
-    }
-
-    return true;
-  } catch {
-    // 🧨 token inválido o expirado
-    if (to.meta.requiresAuth) return { name: "login" };
-    return true;
+  // ⬇️ Rehidrata desde la cookie llamando a /me solo si no hay user en store
+  if (!auth.user) {
+    try { await auth.fetchMe(); } catch { /* ignora */ }
   }
+
+  if (to.meta?.requiresAuth && !auth.isAuthenticated) return { name: "login" };
+  if (to.meta?.guestOnly && auth.isAuthenticated && to.name !== "register") return { name: "dashboard" };
+  return true;
 });
+
 
 export default router;

@@ -2,14 +2,14 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { ENV } from './config/env';
-import { registerRoutes } from './routes';
+import routes from "./routes";
 
 const app = express();
 
 // Configurar CORS con cookies
 app.use(
   cors({
-    origin: "http://localhost:3000", // Cambia según tu frontend
+    origin: "http://localhost:5173", // Cambia según tu frontend
     credentials: true,               // Permite envío de cookies
   })
 );
@@ -19,6 +19,6 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Registrar tus rutas
-registerRoutes(app);
+app.use("/api", routes); // 🔹 esto genera /api/users/me
 
 export default app;

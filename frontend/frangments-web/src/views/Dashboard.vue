@@ -3,7 +3,7 @@
     <header class="topbar">
       <div>
         <h2>Panel Fragments</h2>
-        <p class="subtitle">Bienvenido, {{ user?.nombre || "usuario" }}.</p>
+<p class="subtitle">Bienvenido, {{ auth.nombre || "usuario" }}.</p>
       </div>
       <button class="logout-btn" @click="logout">Cerrar sesión</button>
     </header>
@@ -22,60 +22,34 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from "vue";
+import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import apiax from "../apiAxios"; // ✅ cliente axios configurado con cookies
+import { useAuthStore } from "@/stores/auth";
+import apiax from "@/apiAxios";
 
 const router = useRouter();
-const user = ref<any>(null);
+const auth = useAuthStore();        
 const users = ref<any[]>([]);
-let checkInterval: any = null;
 
-// 🔹 Cargar datos protegidos y verificar sesión
 onMounted(async () => {
   try {
-    const { data: userData } = await apiax.get("/users/me");
-    user.value = userData.user;
+    // Si por cualquier motivo llegamos aquí sin user, intenta rehidratar
+    if (!auth.user) await auth.fetchMe();
+    if (!auth.isAuthenticated) return router.push({ name: "login" });
 
-    const { data: usersData } = await apiax.get("/users");
-    users.value = usersData;
-  } catch (err) {
-    console.error("Error cargando datos:", err);
-    router.push({ name: "login" });
-  }
-
-  // 🕒 Comprobar token cada 30 segundos
-  checkInterval = setInterval(checkSession, 30000);
-});
-
-onUnmounted(() => {
-  if (checkInterval) clearInterval(checkInterval);
-});
-
-// 🔒 Verifica si el token sigue siendo válido
-async function checkSession() {
-  try {
-    await apiax.get("/users/me");
-  } catch (err: any) {
-    if (err.response?.status === 401) {
-      console.warn("⚠️ Token expirado. Cerrando sesión...");
-      logout();
-    }
-  }
-}
-
-// 🚪 Logout (también se usa al expirar el token)
-async function logout() {
-  try {
-    await apiax.post("/users/logout"); // si no existe el endpoint, no pasa nada
+    const { data } = await apiax.get("/users");
+    users.value = data ?? [];
   } catch {
-    // ignoramos errores
-  } finally {
-    localStorage.removeItem("user");
     router.push({ name: "login" });
   }
+});
+
+async function logout() {
+  await auth.logout();
+  router.push({ name: "login" });
 }
 </script>
+
 
 <style scoped>
 .dash { padding: 2rem; }

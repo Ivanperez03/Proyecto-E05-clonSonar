@@ -55,24 +55,25 @@ export const userController = {
     }
   },
 
-  async me(req: Request, res: Response) {
-    const jwtPayload = (req as any).jwt as { email: string };
-    if (!jwtPayload?.email)
-      return res.status(401).json({ message: "No autorizado" });
+async me(req: Request, res: Response) {
+  const jwtPayload = (req as any).jwt as { email: string };
+  if (!jwtPayload?.email)
+    return res.status(401).json({ message: "No autorizado" });
 
-    const u = await userRepo.findByEmail(jwtPayload.email);
-    if (!u)
-      return res.status(404).json({ message: "Usuario no encontrado" });
+  const u = await userRepo.findByEmail(jwtPayload.email);
+  if (!u)
+    return res.status(404).json({ message: "Usuario no encontrado" });
 
-    res.json({
-      user: {
-        id: u.id_usuario,
-        nombre: u.nombre,
-        email: u.mail,
-        telefono: u.telefono,
-      },
-    });
-  },
+  res.json({
+    user: {
+      id: u.id_usuario,
+      nombre: u.nombre,
+      email: u.mail,
+      telefono: u.telefono,
+    },
+  });
+}
+,
 
   async logout(_req: Request, res: Response) {
     res

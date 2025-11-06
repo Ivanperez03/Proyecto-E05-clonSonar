@@ -24,27 +24,16 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import apiax from "../apiAxios"; // 🔹 usa tu cliente Axios con withCredentials
+import { useAuthStore } from "@/stores/auth";
 
 const email = ref("");
 const password = ref("");
 const router = useRouter();
+const auth = useAuthStore();
 
 const handleLogin = async () => {
-  try {
-    // Petición login, cookie se guarda automáticamente
-    const { data } = await apiax.post("/users/login", {
-      email: email.value,
-      password: password.value,
-    });
-
-    // Guardamos solo los datos del usuario, no la cookie/token
-    localStorage.setItem("user", JSON.stringify(data.user));
-
-    router.push("/dashboard");
-  } catch (e: any) {
-    alert(e?.response?.data?.message ?? "Error iniciando sesión");
-  }
+  await auth.login(email.value, password.value);
+  router.push({ name: "dashboard" }); 
 };
 </script>
 
