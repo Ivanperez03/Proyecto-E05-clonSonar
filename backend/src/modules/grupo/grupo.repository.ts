@@ -37,4 +37,12 @@ export const grupoRepo = {
     const { rows } = await db.query("SELECT * FROM grupo WHERE id_grupo = $1", [id_grupo]);
     return rows[0];  // Devuelve el grupo o null si no existe
   },
+  async deleteById(id_grupo: string | number) {
+    try {
+      await db.query('DELETE FROM grupo WHERE id_grupo = $1', [id_grupo]);
+    } catch (error) {
+      console.error('Error eliminando el grupo:', error);
+      throw new Error('No se pudo eliminar el grupo');
+    }
+  },
 };

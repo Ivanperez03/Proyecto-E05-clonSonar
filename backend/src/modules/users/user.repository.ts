@@ -6,6 +6,7 @@ export type UserRow = {
   mail: string;
   telefono: string;
   contrasena?: string;
+  tipo:string;
 };
 
 export const userRepo = {
@@ -14,7 +15,7 @@ export const userRepo = {
     return r.rowCount! > 0;
   },
 
-  async insert(p: { nombre: string; email: string; telefono: string; hash: string; }) {
+  async insert(p: { nombre: string; email: string; telefono: string; hash: string; tipo: string; }) {
     const q = `
       INSERT INTO usuario (nombre, mail, telefono, contrasena)
       VALUES ($1,$2,$3,$4)
@@ -25,9 +26,20 @@ export const userRepo = {
 
   async findByEmail(email: string) {
     const { rows } = await db.query<UserRow & { contrasena: string }>(
-      "SELECT id_usuario, nombre, mail, telefono, contrasena FROM usuario WHERE LOWER(mail)=LOWER($1)",
+      "SELECT id_usuario, nombre, mail, telefono, contrasena,tipo FROM usuario WHERE LOWER(mail)=LOWER($1)",
       [email]
     );
     return rows[0] ?? null;
+  },
+  getAll: async () => {
+    const { rows } = await db.query('SELECT id_usuario, nombre, mail, telefono, tipo FROM usuario');
+    
+    return rows;
+  },  
+  async promoteToAdmin(id: string) {
+    await db.query('UPDATE usuario SET rol=$1 WHERE id_usuario=$2', ['admin', id]);
+  },
+  async deleteById(id: string) {
+    await db.query('DELETE FROM usuario WHERE id_usuario=$1', [id]);
   },
 };

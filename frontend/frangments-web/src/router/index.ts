@@ -7,74 +7,35 @@ import CuentaView from "@/views/CuentaView.vue";
 import BuscadorView from "@/views/BuscadorView.vue"; 
 import OfertarView from "@/views/OfertarView.vue";
 import AdminView from "@/views/AdminView.vue";
+import { useAuthStore } from "@/stores/auth";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    {
-      path: "/",
-      name: "home",
-      component: HomeView,
-    },
-    {
-      path: "/dashboard",
-      name: "dashboard",
-      component: DashboardView,
-      meta: { requiresAuth: true },
-    },
-    {
-      path: "/login",
-      name: "login",
-      component: LoginView,
-      meta: { guestOnly: true },
-    },
-    { 
-      path: "/register",
-      name: "register",
-      component: RegisterView,
-      meta: { guestOnly: true },
-    },
-    {
-      path: "/cuenta",
-      name: "cuenta",
-      component: CuentaView,
-      meta: { requiresAuth: true },
-    },
-    {
-      path: "/buscador",
-      name: "buscador",
-      component: BuscadorView,
-      meta: { requiresAuth: true },
-    },
-    {
-      path: "/ofertar",
-      name: "ofertar",
-      component: OfertarView,
-      meta: { requiresAuth: true },
-    }, 
-    {
-      path: "/admin",
-      name: "admin",
-      component: AdminView,
-      meta: { requiresAuth: true },
-    },
+    { path: "/", name: "home", component: HomeView },
+    { path: "/dashboard", name: "dashboard", component: DashboardView, meta: { requiresAuth: true } },
+    { path: "/login", name: "login", component: LoginView, meta: { guestOnly: true } },
+    { path: "/register", name: "register", component: RegisterView, meta: { guestOnly: true } },
+    { path: "/cuenta", name: "cuenta", component: CuentaView, meta: { requiresAuth: true } },
+    { path: "/buscador", name: "buscador", component: BuscadorView, meta: { requiresAuth: true } },
+    { path: "/ofertar", name: "ofertar", component: OfertarView, meta: { requiresAuth: true } },
+    { path: "/admin", name: "admin", component: AdminView, meta: { requiresAuth: true, requiresAdmin: true } },
   ],
 });
-
-import { useAuthStore } from "@/stores/auth";
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore();
 
-  // ⬇️ Rehidrata desde la cookie llamando a /me solo si no hay user en store
+  // Rehidrata desde la cookie si no hay usuario
   if (!auth.user) {
-    try { await auth.fetchMe(); } catch { /* ignora */ }
+    try { await auth.fetchMe(); } catch {}
   }
 
   if (to.meta?.requiresAuth && !auth.isAuthenticated) return { name: "login" };
   if (to.meta?.guestOnly && auth.isAuthenticated && to.name !== "register") return { name: "dashboard" };
+  if (to.meta?.requiresAdmin && !auth.isAdmin) return { name: "dashboard" };
+
   return true;
 });
-
 
 export default router;
