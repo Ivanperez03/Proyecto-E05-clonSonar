@@ -2,28 +2,32 @@
   <div class="cuenta">
     <header class="header">
       <h2>Mi cuenta</h2>
-      <p class="subtitle">Información personal de {{ auth.nombre || "usuario" }}</p>
+      <p class="subtitle">
+        Información personal de {{ auth.user?.nombre || "usuario" }}
+      </p>
     </header>
 
     <section class="info">
       <div class="info-item">
         <label>Nombre</label>
-        <p>{{ auth.nombre || "No disponible" }}</p>
+        <p>{{ auth.user?.nombre || "No disponible" }}</p>
       </div>
 
       <div class="info-item">
         <label>Email</label>
-        <p>{{ auth.email || "No disponible" }}</p>
+        <p>{{ auth.user?.email || "No disponible" }}</p>
       </div>
 
       <div class="info-item">
         <label>Teléfono</label>
-        <p>{{ auth.telefono || "No disponible" }}</p>
+        <p>{{ auth.user?.telefono || "No disponible" }}</p>
       </div>
 
       <div class="info-item">
         <label>Saldo</label>
-        <p>{{ saldo !== null ? saldo + " €" : "Cargando..." }}</p>
+        <p>
+          {{ account.loading ? "Cargando..." : account.saldo + " €" }}
+        </p>
       </div>
     </section>
 
@@ -33,12 +37,21 @@
         <h3>Grupos</h3>
 
         <ul>
-          <li v-for="grupo in grupos" :key="grupo.id">{{ grupo.nombre }}</li>
-          <li v-if="grupos.length === 0">No perteneces a ningún grupo.</li>
+          <li
+            v-for="grupo in account.grupos"
+            :key="grupo.nombre"
+          >
+            {{ grupo.nombre }}
+          </li>
+          <li v-if="account.grupos.length === 0">
+            No perteneces a ningún grupo.
+          </li>
         </ul>
 
         <div v-if="!creandoGrupo" class="crear-grupo">
-          <button class="btn crear" @click="creandoGrupo = true">➕ Crear grupo</button>
+          <button class="btn crear" @click="creandoGrupo = true">
+            ➕ Crear grupo
+          </button>
         </div>
 
         <div v-else class="nuevo-grupo">
@@ -50,7 +63,9 @@
           />
           <div class="acciones-grupo">
             <button class="btn confirmar" @click="crearGrupo">✅ Crear</button>
-            <button class="btn cancelar" @click="cancelarCreacion">❌ Cancelar</button>
+            <button class="btn cancelar" @click="cancelarCreacion">
+              ❌ Cancelar
+            </button>
           </div>
         </div>
       </div>
@@ -59,65 +74,64 @@
       <div class="panel">
         <h3>Suscripciones activas</h3>
         <ul>
-          <li v-for="sub in suscripciones" :key="sub.id">{{ sub.nombre }}</li>
-          <li v-if="suscripciones.length === 0">No tienes suscripciones activas.</li>
+          <li
+            v-for="sub in account.suscripciones"
+            :key="sub.id"
+          >
+            <!-- Ajusta según lo que devuelva tu SQL -->
+            {{ sub.nombre }} –
+            {{ sub.precio }}€,
+            vence el {{ sub.fechaVencimiento }}
+          </li>
+          <li v-if="account.suscripciones.length === 0">
+            No tienes suscripciones activas.
+          </li>
         </ul>
       </div>
     </section>
 
     <div class="acciones">
-      <button class="btn secondary" @click="volverDashboard">Volver al panel</button>
-      <button class="btn logout" @click="logout">Cerrar sesión</button>
+      <button class="btn secondary" @click="volverDashboard">
+        Volver al panel
+      </button>
+      <button class="btn logout" @click="logout">
+        Cerrar sesión
+      </button>
     </div>
   </div>
 </template>
+
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useAuthStore } from "@/stores/auth";
 import { useRouter } from "vue-router";
+import { useAccountStore } from "@/stores/cuenta";
 import apiax from "@/apiAxios";
 
 const auth = useAuthStore();
 const router = useRouter();
-
-const saldo = ref<number | null>(null);
-const grupos = ref<any[]>([]);
-const suscripciones = ref<any[]>([]);
-
+const account = useAccountStore();
 const creandoGrupo = ref(false);
 const nuevoGrupo = ref("");
 
 onMounted(async () => {
   try {
     if (!auth.user) await auth.fetchMe();
-
-    const { data: saldoData } = await apiax.get(`/usuarios/${auth.id}/saldo`);
-    const { data: gruposData } = await apiax.get(`/usuarios/${auth.id}/grupos`);
-    const { data: suscripcionesData } = await apiax.get(`/usuarios/${auth.id}/suscripciones`);
-
-    saldo.value = saldoData.saldo ?? 0;
-    grupos.value = gruposData ?? [];
-    suscripciones.value = suscripcionesData ?? [];
+    if (!auth.isAuthenticated) return router.push({ name: "login" });
+    await account.userData();
   } catch (error) {
     console.error("Error cargando los datos del usuario:", error);
+    router.push({ name: "login" });
   }
 });
 
 async function crearGrupo() {
-  if (!nuevoGrupo.value.trim()) return alert("Por favor, introduce un nombre para el grupo.");
-
+  if (!nuevoGrupo.value.trim()) {
+    return alert("Por favor, introduce un nombre para el grupo.");
+  }
   try {
-    // Simulación o llamada real a la API
-    const { data } = await apiax.post(`/grupos`, {
-      nombre: nuevoGrupo.value,
-      propietarioId: auth.id,
-    });
-
-    // Actualizar la lista local
-    grupos.value.push(data || { id: Date.now(), nombre: nuevoGrupo.value });
-
-    // Resetear estado
+    await account.createGroup(nuevoGrupo.value);
     nuevoGrupo.value = "";
     creandoGrupo.value = false;
   } catch (error) {

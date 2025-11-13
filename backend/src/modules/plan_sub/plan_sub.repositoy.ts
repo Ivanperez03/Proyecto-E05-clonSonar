@@ -72,9 +72,25 @@ export const planSubRepo = {
       throw new Error("No se pudieron obtener las plataformas");
     }
   },
-
-  // ✅ Método temporal para que no tire error
-  async getActiveSubscriptions(id_usuario: number) {
-    return []; // devuelve un array vacío
+  async getActiveSubscriptionsByUserId(id_usuario: number) {
+    const { rows } = await db.query(
+      `SELECT
+          ps.id_plan,
+          ps.precio_plan,
+          ps.fecha_vencimiento,
+          g.id_grupo,
+          g.nombre       AS nombre_grupo,
+          p.id_plataforma,
+          p.nombre       AS plataforma
+       FROM miembro_grupo mg
+       JOIN grupo g       ON g.id_grupo = mg.id_grupo
+       JOIN plan_sub ps   ON ps.id_grupo = g.id_grupo
+       JOIN plataforma p  ON p.id_plataforma = ps.id_plataforma
+       WHERE mg.id_usuario = $1
+         AND ps.fecha_vencimiento >= NOW()
+       ORDER BY ps.fecha_vencimiento`,
+      [id_usuario]
+    );
+    return rows;
   },
 };

@@ -14,7 +14,7 @@ const router = Router();
 // === USERS ===
 router.use("/users", userRouter);
 router.get("/me", authMiddleware, userController.me);
-router.get("/user/data", authMiddleware, userController.getUserData);
+router.get("/user/data", authMiddleware, userController.getUserData); // usado en panel de cuenta no tocar gracias
 
 // === PLATAFORMA ===
 router.use("/plataforma", plataformaRouter);
@@ -32,6 +32,6 @@ router.use("/miembro_grupo", miembroGrupoRouter);
 router.use("/cartera", carteraRouter);
 
 // === ADMIN ===
-router.use("/admin", adminRouter); // 👈 necesario para panel admin
+router.use("/admin", adminRouter); 
 
 export default router;

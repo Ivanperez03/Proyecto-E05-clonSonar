@@ -32,7 +32,22 @@ export const grupoRepo = {
       throw new Error("No se pudieron obtener los grupos");
     }
   },
-
+  async getGruposByUserId(id_usuario: number) {
+    const { rows } = await db.query(
+      `SELECT
+          g.id_grupo,
+          g.nombre,
+          g.fecha_creacion,
+          g.estado,
+          g.id_jefe
+       FROM grupo g
+       JOIN miembro_grupo mg ON mg.id_grupo = g.id_grupo
+       WHERE mg.id_usuario = $1
+       ORDER BY g.fecha_creacion`,
+      [id_usuario]
+    );
+    return rows;
+  },
   async findById(id_grupo: number) {
     const { rows } = await db.query("SELECT * FROM grupo WHERE id_grupo = $1", [id_grupo]);
     return rows[0];  // Devuelve el grupo o null si no existe

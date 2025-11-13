@@ -8,9 +8,6 @@ router.get('/usuarios', AdminController.getUsuarios);
 router.delete('/usuarios/:id', AdminController.eliminarUsuario);
 router.post('/usuarios/:id/promover', AdminController.promoverUsuario);
 
-// (opcional) actualizar saldo si lo usas en el front
-// router.put('/usuarios/:id/saldo', AdminController.actualizarSaldo);
-
 // ==== GRUPOS ====
 router.get('/grupos', AdminController.getGrupos);
 router.delete('/grupos/:id', AdminController.eliminarGrupo);

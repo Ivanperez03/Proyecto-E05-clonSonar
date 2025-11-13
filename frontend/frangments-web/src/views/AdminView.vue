@@ -79,69 +79,56 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
-import apiax from "@/apiAxios";
 import { useAuthStore } from "@/stores/auth";
+import { useAdminStore } from "@/stores/admin";
 
 const router = useRouter();
 const auth = useAuthStore();
+const admin = useAdminStore();
 
 const seccionActiva = ref("usuarios");
-const usuarios = ref<any[]>([]);
-const grupos = ref<any[]>([]);
-const ofertas = ref<any[]>([]);
+
+// Computeds para NO tocar tu template
+const usuarios = computed(() => admin.users);
+const grupos = computed(() => admin.grupos);
+const ofertas = computed(() => admin.ofertas);
 
 onMounted(async () => {
   try {
     if (!auth.user) await auth.fetchMe();
     if (!auth.isAdmin) return router.push({ name: "dashboard" });
 
-    // Usuarios
-    const { data: usersData } = await apiax.get("/admin/usuarios");
-    usuarios.value = usersData.map((u: any) => ({ ...u, nuevoSaldo: null }));
-
-    // Grupos
-    const { data: gruposData } = await apiax.get("/admin/grupos");
-    grupos.value = gruposData.map((g: any) => ({ ...g, id: g.id_grupo }));
-
-    // Ofertas
-    const { data: ofertasData } = await apiax.get("/admin/ofertas");
-    ofertas.value = ofertasData ?? [];
+    await admin.loadAll();
   } catch (err) {
     console.error("Error al cargar datos de administración:", err);
   }
 });
 
-// === Acciones ===
+// === Acciones (mismas que ya tenías, pero delegando en el store) ===
 async function eliminarUsuario(id_usuario: number) {
   if (!confirm("¿Seguro que deseas eliminar este usuario?")) return;
-  await apiax.delete(`/admin/usuarios/${id_usuario}`);
-  usuarios.value = usuarios.value.filter((u) => u.id_usuario !== id_usuario);
+  await admin.eliminarUsuario(id_usuario);
 }
 
 async function promoverUsuario(id_usuario: number) {
-  await apiax.post(`/admin/usuarios/${id_usuario}/promover`);
-  const user = usuarios.value.find((u) => u.id_usuario === id_usuario);
-  if (user) user.tipo = "admin";
+  await admin.promoverUsuario(id_usuario);
 }
 
 async function eliminarGrupo(id: number) {
   if (!confirm("¿Eliminar este grupo?")) return;
-  await apiax.delete(`/admin/grupos/${id}`);
-  grupos.value = grupos.value.filter((g) => g.id !== id);
+  await admin.eliminarGrupo(id);
 }
 
 async function eliminarOferta(id: number) {
   if (!confirm("¿Eliminar esta oferta?")) return;
-  await apiax.delete(`/admin/ofertas/${id}`);
-  ofertas.value = ofertas.value.filter((o) => o.id !== id);
+  await admin.eliminarOferta(id);
 }
 
 async function actualizarSaldo(user: any) {
   if (user.nuevoSaldo == null) return alert("Introduce un saldo válido.");
-  await apiax.put(`/admin/usuarios/${user.id_usuario}/saldo`, { saldo: user.nuevoSaldo });
-  user.saldo = user.nuevoSaldo;
+  await admin.actualizarSaldo(user);
   user.nuevoSaldo = null;
   alert(`Saldo de ${user.nombre} actualizado.`);
 }
@@ -155,6 +142,7 @@ async function logout() {
   router.push({ name: "login" });
 }
 </script>
+
 
 <style scoped>
 .admin {

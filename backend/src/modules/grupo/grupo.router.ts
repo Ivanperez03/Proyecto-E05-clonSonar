@@ -1,13 +1,11 @@
 import { Router } from "express";
-import { grupoController } from "./grupo.controller";  
+import { grupoController } from "./grupo.controller"; 
+import { authMiddleware } from "../../middleware/auth.middleware";
 
 const router = Router();
 
-// Ruta para crear un nuevo grupo
-router.post("/create", grupoController.createGroup);
-// Ruta para obtener todos los grupos
-router.get("/", grupoController.getAllGroups);
-// Ruta para obtener un grupo por ID
-router.get("/:id_grupo", grupoController.getGroupById);
+router.get("/", authMiddleware, grupoController.getAllGroups);
+router.get("/:id_grupo", authMiddleware, grupoController.getGroupById);
+router.post("/", authMiddleware, grupoController.createGroup);
 
 export default router;

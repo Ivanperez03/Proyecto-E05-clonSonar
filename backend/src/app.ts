@@ -9,16 +9,13 @@ const app = express();
 // Configurar CORS con cookies
 app.use(
   cors({
-    origin: "http://localhost:5173", // Cambia según tu frontend
+    origin: "http://localhost:5173", 
     credentials: true,               // Permite envío de cookies
   })
 );
 
-// Middleware para leer JSON y cookies
 app.use(express.json());
 app.use(cookieParser());
-
-// Registrar tus rutas
-app.use("/api", routes); // 🔹 esto genera /api/users/me
+app.use("/api", routes); 
 
 export default app;

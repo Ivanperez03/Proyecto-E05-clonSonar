@@ -5,10 +5,9 @@ import { ENV } from '../../config/env';
 import { userRepo } from "./user.repository";
 import { carteraRepo } from "../cartera/cartera.repository";
 import { planSubRepo } from "../plan_sub/plan_sub.repositoy";
-import { miembroGrupoRepo } from "../miembro_grupo/miembro_grupo.repository"; // Asegúrate de importar
+import { grupoRepo } from '../grupo/grupo.repository';
 
 export const userController = {
-  // Registro de usuario
   async register(req: Request, res: Response) {
     try {
       const { nombre, email, telefono, password, admin } = req.body;
@@ -26,8 +25,6 @@ export const userController = {
       res.status(msg === e.message ? 409 : 500).json({ message: msg, detail: e?.message });
     }
   },
-
-  // Login de usuario
   async login(req: Request, res: Response) {
     try {
       const { email, password } = req.body;
@@ -63,8 +60,6 @@ export const userController = {
       res.status(401).json({ message: "Credenciales inválidas" });
     }
   },
-
-  // Obtener datos del usuario actual
   async me(req: Request, res: Response) {
     const jwtPayload = (req as any).jwt as { email: string, admin?: boolean };
     if (!jwtPayload?.email)
@@ -85,50 +80,39 @@ export const userController = {
       },
     });
   },
-
-  // Cerrar sesión
   async logout(_req: Request, res: Response) {
     res
       .clearCookie("token", { httpOnly: true, secure: false, sameSite: "lax" })
       .json({ message: "Sesión cerrada" });
   },
-
-  // Obtener datos completos de un usuario
   async getUserData(req: Request, res: Response) {
-    const emailId = (req as any).jwt?.email;  // JWT debe contener el email
-    try {
-      const user = await userRepo.findByEmail(emailId);
-      if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
+    const jwtPayload = (req as any).jwt as { email: string };
+    if (!jwtPayload?.email)
+      return res.status(401).json({ message: "No autorizado" });
 
-      const saldo = await carteraRepo.getSaldoByUserId(user.id_usuario);
-      const grupos = await miembroGrupoRepo.getMembersByUserId(user.id_usuario);
-      //const suscripciones = await planSubRepo.getActiveSubscriptions(user.id_usuario);
-      const suscripciones: any[] = [];
-      const suscripcionesConTiempoRestante = suscripciones.map((suscripcion) => ({
-        ...suscripcion,
-        tiempoRestante: calculateTimeRemaining(suscripcion.fecha_vencimiento)
-      }));
+    const u = await userRepo.findByEmail(jwtPayload.email);
+    if (!u)
+      return res.status(404).json({ message: "Usuario no encontrado" });
 
-      const plataformas = await planSubRepo.getPlataformasByUserId(user.id_usuario);
+    const id_usuario = u.id_usuario;
 
-      res.json({
-        user,
-        saldo,
-        grupos,
-        suscripciones: suscripcionesConTiempoRestante,
-        plataformas,
-      });
-    } catch (error: any) {
-      console.error("Error obteniendo los datos del usuario:", error);
-      return res.status(500).json({ message: "Error al obtener los datos", error: error.message });
-    }
-  },
+    const [cartera, grupos, suscripciones] = await Promise.all([
+      carteraRepo.findByUserId(id_usuario),
+      grupoRepo.getGruposByUserId(id_usuario),
+      planSubRepo.getActiveSubscriptionsByUserId(id_usuario),
+    ]);
+
+    res.json({
+      user: {
+        id: u.id_usuario,
+        nombre: u.nombre,
+        email: u.mail,
+        telefono: u.telefono,
+        tipo: u.tipo,
+      },
+      saldo: cartera?.saldo ?? 0,
+      grupos,
+      suscripciones,
+    });
+  }
 };
-
-function calculateTimeRemaining(fecha_vencimiento: Date) {
-  const now = new Date();
-  const vencimiento = new Date(fecha_vencimiento);
-  const diffTime = vencimiento.getTime() - now.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 3600 * 24));
-  return diffDays;
-}
