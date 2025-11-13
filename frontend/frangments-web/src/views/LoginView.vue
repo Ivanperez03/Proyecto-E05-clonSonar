@@ -25,23 +25,28 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-const errorMessage = ref("");
 import { useAuthStore } from "@/stores/auth";
 
 const email = ref("");
 const password = ref("");
+const errorMessage = ref("");
 const router = useRouter();
 const auth = useAuthStore();
 
 const handleLogin = async () => {
   try {
+    // Inicia sesión con los datos ingresados
     await auth.login(email.value, password.value);
-    router.push({ name: "dashboard" }); 
-  } catch (e: any){ 
+    router.push({ name: "dashboard" });
+
+
+  } catch (e: any) { 
+    // Muestra mensaje de error si el login falla
     errorMessage.value = e?.response?.data?.message ?? "Correo o contraseña incorrectos";
   }
 };
 </script>
+
 
 <style scoped>
 .login-container {

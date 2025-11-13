@@ -24,16 +24,16 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="user in usuarios" :key="user.id">
+          <tr v-for="user in usuarios" :key="user.id_usuario">
             <td>{{ user.nombre }}</td>
-            <td>{{ user.email }}</td>
-            <td>{{ user.rol }}</td>
+            <td>{{ user.mail }}</td>
+            <td>{{ user.tipo }}</td>
             <td>
-              <button class="btn-sm danger" @click="eliminarUsuario(user.id)">Eliminar</button>
+              <button class="btn-sm danger" @click="eliminarUsuario(user.id_usuario)">Eliminar</button>
               <button
-                v-if="user.rol !== 'admin'"
+                v-if="user.tipo !== 'admin'"
                 class="btn-sm success"
-                @click="promoverUsuario(user.id)"
+                @click="promoverUsuario(user.id_usuario)"
               >
                 Promover a admin
               </button>
@@ -88,7 +88,6 @@ const router = useRouter();
 const auth = useAuthStore();
 
 const seccionActiva = ref("usuarios");
-
 const usuarios = ref<any[]>([]);
 const grupos = ref<any[]>([]);
 const ofertas = ref<any[]>([]);
@@ -96,17 +95,18 @@ const ofertas = ref<any[]>([]);
 onMounted(async () => {
   try {
     if (!auth.user) await auth.fetchMe();
-    'if (auth.rol !== "admin") return router.push({ name: "dashboard" });'
+    if (!auth.isAdmin) return router.push({ name: "dashboard" });
 
+    // Usuarios
     const { data: usersData } = await apiax.get("/admin/usuarios");
-    const { data: gruposData } = await apiax.get("/admin/grupos");
-    const { data: ofertasData } = await apiax.get("/admin/ofertas");
+    usuarios.value = usersData.map((u: any) => ({ ...u, nuevoSaldo: null }));
 
-    usuarios.value = usersData.map((u: any) => ({
-      ...u,
-      nuevoSaldo: null,
-    }));
-    grupos.value = gruposData ?? [];
+    // Grupos
+    const { data: gruposData } = await apiax.get("/admin/grupos");
+    grupos.value = gruposData.map((g: any) => ({ ...g, id: g.id_grupo }));
+
+    // Ofertas
+    const { data: ofertasData } = await apiax.get("/admin/ofertas");
     ofertas.value = ofertasData ?? [];
   } catch (err) {
     console.error("Error al cargar datos de administración:", err);
@@ -114,16 +114,16 @@ onMounted(async () => {
 });
 
 // === Acciones ===
-async function eliminarUsuario(id: number) {
+async function eliminarUsuario(id_usuario: number) {
   if (!confirm("¿Seguro que deseas eliminar este usuario?")) return;
-  await apiax.delete(`/admin/usuarios/${id}`);
-  usuarios.value = usuarios.value.filter((u) => u.id !== id);
+  await apiax.delete(`/admin/usuarios/${id_usuario}`);
+  usuarios.value = usuarios.value.filter((u) => u.id_usuario !== id_usuario);
 }
 
-async function promoverUsuario(id: number) {
-  await apiax.post(`/admin/usuarios/${id}/promover`);
-  const user = usuarios.value.find((u) => u.id === id);
-  if (user) user.rol = "admin";
+async function promoverUsuario(id_usuario: number) {
+  await apiax.post(`/admin/usuarios/${id_usuario}/promover`);
+  const user = usuarios.value.find((u) => u.id_usuario === id_usuario);
+  if (user) user.tipo = "admin";
 }
 
 async function eliminarGrupo(id: number) {
@@ -140,7 +140,7 @@ async function eliminarOferta(id: number) {
 
 async function actualizarSaldo(user: any) {
   if (user.nuevoSaldo == null) return alert("Introduce un saldo válido.");
-  await apiax.put(`/admin/usuarios/${user.id}/saldo`, { saldo: user.nuevoSaldo });
+  await apiax.put(`/admin/usuarios/${user.id_usuario}/saldo`, { saldo: user.nuevoSaldo });
   user.saldo = user.nuevoSaldo;
   user.nuevoSaldo = null;
   alert(`Saldo de ${user.nombre} actualizado.`);
@@ -257,20 +257,6 @@ th, td {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.saldo-item {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin-bottom: 0.8rem;
-}
-
-.saldo-item input {
-  padding: 0.4rem;
-  border-radius: 0.4rem;
-  border: 1px solid #cbd5e1;
-  width: 100px;
 }
 
 .acciones-finales {

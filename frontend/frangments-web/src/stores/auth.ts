@@ -13,12 +13,18 @@ export const useAuthStore = defineStore("auth", {
   getters: {
     isAuthenticated: (s) => !!s.user,
     nombre: (s) => s.user?.nombre ?? "",
+    isAdmin: (s) => s.user?.tipo?.toLowerCase() === "admin"
   },
   actions: {
     async login(email: string, password: string) {
-      this.loading = true; this.error = "";
+      this.loading = true;
+      this.error = "";
       try {
-        this.user = await authService.login(email, password);
+        // Hacer login y que devuelva token/cookies
+        await authService.login(email, password);
+  
+        // Obtener el usuario completo (con rol) desde backend
+        this.user = await authService.me();
       } catch (e: any) {
         this.error = e?.response?.data?.message ?? "Error iniciando sesión";
         throw e;
