@@ -1,22 +1,16 @@
 import { db } from '../../config/db';
 
 export const miembroGrupoRepo = {
-  async addMemberToGroup({
-    id_grupo,
-    id_usuario,
-  }: {
-    id_grupo: number;
-    id_usuario: number;
-  }) {
+  async addUserToGroup(id_usuario: number, id_grupo: number) {
     try {
       const { rows } = await db.query(
         `INSERT INTO miembro_grupo (id_grupo, id_usuario, fecha_ingreso) 
-         VALUES ($1, $2, CURRENT_DATE) 
+         VALUES ($1, $2, NOW())
          RETURNING *`,
         [id_grupo, id_usuario]
       );
-      return rows[0];  
-    } catch (error) {
+      return rows[0];
+    } catch (error: any) {
       console.error("Error agregando miembro al grupo:", error);
       throw new Error("No se pudo agregar el miembro al grupo");
     }

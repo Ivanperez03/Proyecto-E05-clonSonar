@@ -27,7 +27,7 @@
     </section>
 
     <section class="plataformas">
-      <h3>Mis plataformas</h3>
+      <h3>Plataformas disponibles</h3>
       <div class="plataformas-grid">
         <div v-for="(plataforma, i) in plataformas" :key="i" class="plataforma-card">
           <h4>{{ plataforma.nombre }}</h4>

@@ -2,17 +2,14 @@ import { db } from "../../config/db";
 
 export const carteraRepo = {
   // Obtener el saldo de un usuario
-  async getSaldoByUserId(id_usuario: number) {
-    try {
-      const { rows } = await db.query(
-        "SELECT saldo FROM cartera WHERE id_usuario = $1",
-        [id_usuario]
-      );
-      return rows[0] ? rows[0].saldo : null;  // Si no existe, retorna null
-    } catch (error) {
-      console.error("Error obteniendo el saldo:", error);
-      throw new Error("No se pudo obtener el saldo");
-    }
+  async findByUserId(id_usuario: number) {
+    const { rows } = await db.query(
+      `SELECT saldo
+       FROM cartera
+       WHERE id_usuario = $1`,
+      [id_usuario]
+    );
+    return rows[0] ?? null;
   },
   // Actualizar el saldo de un usuario
   async updateSaldo(id_usuario: number, saldo: number) {
