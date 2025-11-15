@@ -8,11 +8,11 @@ type AdminUser = {
   mail: string;
   tipo: string;
   saldo?: number;
-  nuevoSaldo: number | null; // lo usas en actualizarSaldo()
+  nuevoSaldo: number | null; 
 };
 
 type AdminGrupo = {
-  id: number;     // 👈 para que coincida con tu template (grupo.id)
+  id: number;    
   nombre: string;
 };
 
