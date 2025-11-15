@@ -94,6 +94,9 @@
       <button class="btn secondary" @click="volverDashboard">
         Volver al panel
       </button>
+      <button class="btn saldo" @click="irPlataformaPago">
+        Añadir saldo
+      </button>
       <button class="btn logout" @click="logout">
         Cerrar sesión
       </button>
@@ -153,6 +156,11 @@ async function logout() {
 function volverDashboard() {
   router.push({ name: "dashboard" });
 }
+
+function irPlataformaPago() {
+  router.push({ name: "plataformapago" });
+}
+
 </script>
 
 <style scoped>
@@ -325,5 +333,15 @@ function volverDashboard() {
 .btn.logout:hover {
   background: #dc2626;
 }
+
+.btn.saldo {
+  background: #10b981; /* verde */
+  color: #fff;
+}
+
+.btn.saldo:hover {
+  background: #059669;
+}
+
 </style>
 
