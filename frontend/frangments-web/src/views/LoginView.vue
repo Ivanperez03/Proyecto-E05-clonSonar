@@ -49,88 +49,126 @@ const handleLogin = async () => {
 
 
 <style scoped>
+/* ===== CONTENEDOR GENERAL ===== */
 .login-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #e8edff, #cdd9ff);
-  font-family: "Inter", sans-serif;
+  padding: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  background: linear-gradient(120deg, #e0f2ff, #a2b8d9, #1e293b);
 }
 
+/* ===== TARJETA LOGIN (glass) ===== */
 .login {
   width: 100%;
-  max-width: 400px;
-  background: #ffffff;
-  padding: 2rem 2.5rem;
-  border-radius: 1rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  text-align: left;
+  max-width: 420px;
+  padding: 2.4rem 2.3rem 2.2rem;
+  border-radius: 18px;
+
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 25px 50px rgba(15, 23, 42, 0.25);
+
+  animation: fadeUp 0.6s ease;
 }
 
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== TÍTULOS ===== */
 h1 {
-  font-size: 1.8rem;
-  margin-bottom: 0.5rem;
-  color: #1e293b;
+  font-size: 1.9rem;
+  margin: 0 0 0.3rem;
+  font-weight: 800;
+  text-align: center;
+
+  background: linear-gradient(120deg, #1e293b, #312e81);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .subtitle {
-  margin-bottom: 1.5rem;
-  color: #64748b;
+  text-align: center;
+  margin-bottom: 1.9rem;
+  font-size: 0.95rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(51, 65, 85, 0.8);
 }
 
+/* ===== FORMULARIO ===== */
 .login-form {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  align-items: stretch;
 }
 
 label {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #1e293b;
-  display: block;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #0f172a;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
+/* ===== INPUTS ===== */
 input {
   width: 100%;
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  border: 1px solid #cbd5e1;
-  background: #f8fafc;
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 0.95rem;
   color: #0f172a;
-  transition: border-color 0.2s ease;
+  transition: 0.25s ease;
   box-sizing: border-box;
+}
+
+input:hover {
+  background: rgba(255, 255, 255, 0.9);
 }
 
 input:focus {
   outline: none;
-  border-color: #4b6cb7;
+  border-color: #6366f1;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35);
 }
 
+/* ===== BOTÓN ENTRAR ===== */
 button {
-  background: #4b6cb7;
-  color: #ffffff;
-  border: none;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s ease;
+  margin-top: 0.4rem;
   width: 100%;
+  padding: 0.85rem;
+  border-radius: 12px;
+  border: none;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+
+  background: linear-gradient(135deg, #4f46e5, #22d3ee);
+  color: #ffffff;
+  box-shadow: 0 10px 30px rgba(45, 70, 185, 0.35);
+  transition: 0.25s ease;
 }
 
 button:hover {
-  background: #3b5aa3;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 35px rgba(45, 70, 185, 0.45);
+  filter: brightness(1.05);
 }
 
+/* ===== ERROR ===== */
 .error-message {
-  color: #e63946; 
-  font-weight: 600;
+  margin-top: 0.6rem;
+  font-size: 0.9rem;
   text-align: center;
-  margin-top: 8px;
+  color: #e11d48;
 }
-
 </style>
