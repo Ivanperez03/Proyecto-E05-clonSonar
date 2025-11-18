@@ -73,4 +73,20 @@ export const miembroGrupoRepo = {
       throw new Error("No se pudieron obtener los grupos");
     }
   },
+  // comprobar si ya está en el grupo
+  async isUserInGroup(id_grupo: number, id_usuario: number) {
+    try {
+      const { rows } = await db.query(
+        `SELECT 1 
+         FROM miembro_grupo 
+         WHERE id_grupo = $1 AND id_usuario = $2
+         LIMIT 1`,
+        [id_grupo, id_usuario]
+      );
+      return rows.length > 0;
+    } catch (error) {
+      console.error("Error comprobando miembro del grupo:", error);
+      throw new Error("No se pudo comprobar el miembro del grupo");
+    }
+  },
 };

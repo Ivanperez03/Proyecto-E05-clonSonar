@@ -8,6 +8,7 @@ import BuscadorView from "@/views/BuscadorView.vue";
 import OfertarView from "@/views/OfertarView.vue";
 import AdminView from "@/views/AdminView.vue";
 import PlataformaPagoView from "@/views/PlataformaPagoView.vue";
+import PlanesPlataformaView from "@/views/PlanesPlataformaView.vue";
 import { useAuthStore } from "@/stores/auth";
 
 const router = createRouter({
@@ -22,6 +23,11 @@ const router = createRouter({
     { path: "/ofertar", name: "ofertar", component: OfertarView, meta: { requiresAuth: true } },
     { path: "/admin", name: "admin", component: AdminView, meta: { requiresAuth: true, requiresAdmin: true } },
     { path: "/plataformapago", name: "plataformapago", component: PlataformaPagoView, meta: { requiresAuth: true} },
+    {
+      path: "/plataformas/:id_plataforma/:plataforma",
+      name: "planes-plataforma",
+      component: PlanesPlataformaView, meta: { requiresAuth: true }
+    }
   ],
 });
 

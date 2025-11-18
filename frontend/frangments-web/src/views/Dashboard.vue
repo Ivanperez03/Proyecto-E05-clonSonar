@@ -135,11 +135,11 @@ const router = useRouter();
 const auth = useAuthStore();
 const users = ref<any[]>([]);
 const plataformas = ref([
-  { id: 1, nombre: "Netflix", descripcion: "Compartes tu cuenta con 3 personas." },
+  { id: 1, nombre: "HBO Max", descripcion: "Compartes tu cuenta con 3 personas." },
   { id: 2, nombre: "Spotify", descripcion: "Plan familiar activo." },
   { id: 3, nombre: "Disney+", descripcion: "Suscripción mensual compartida." },
-  { id: 4, nombre: "HBO Max", descripcion: "Cuenta Premium." },
-  { id: 5, nombre: "Prime Video", descripcion: "Plan anual con envío gratis." },
+  { id: 4, nombre: "Xbox Game Pass", descripcion: "aaa." },
+  { id: 5, nombre: "Canva Pro", descripcion: "aaaa" },
 ]);
 
 onMounted(async () => {

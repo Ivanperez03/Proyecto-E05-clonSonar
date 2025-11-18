@@ -93,4 +93,47 @@ export const planSubRepo = {
     );
     return rows;
   },
+  // NUEVO: planes activos de una plataforma concreta
+  async getActivePlansByPlatformId(id_plataforma: number) {
+    try {
+      const { rows } = await db.query(
+        `SELECT
+           ps.id_plan                    AS id_plan,
+           ps.precio_plan                AS precio_mensual,
+           ps.fecha_vencimiento          AS fecha_vencimiento,
+           g.id_grupo                    AS id_grupo,
+           g.nombre                      AS nombre_grupo
+         FROM plan_sub ps
+         JOIN grupo g ON g.id_grupo = ps.id_grupo
+         WHERE ps.id_plataforma = $1
+           AND ps.fecha_vencimiento >= NOW()
+           AND g.estado = 'abierto'
+         ORDER BY ps.precio_plan ASC`,
+        [id_plataforma]
+      );
+      return rows;
+    } catch (error) {
+      console.error("Error obteniendo planes activos:", error);
+      throw new Error("No se pudieron obtener los planes activos");
+    }
+  },
+  // obtener un plan concreto (para el "unirme")
+  async getPlanById(id_plan: number) {
+    try {
+      const { rows } = await db.query(
+        `SELECT
+           ps.*,
+           g.id_grupo,
+           g.estado AS estado_grupo
+         FROM plan_sub ps
+         JOIN grupo g ON g.id_grupo = ps.id_grupo
+         WHERE ps.id_plan = $1`,
+        [id_plan]
+      );
+      return rows[0] ?? null;
+    } catch (error) {
+      console.error("Error obteniendo el plan:", error);
+      throw new Error("No se pudo obtener el plan");
+    }
+  },
 };

@@ -36,7 +36,7 @@ export const userController = {
       const token = jwt.sign(
         { email: user.mail, admin: user.rol === 'admin' }, 
         ENV.JWT_SECRET as string,
-        { expiresIn: "1h" } // 1 hora de ejemplo
+        { expiresIn: "1h" } 
       );
 
       res

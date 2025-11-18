@@ -6,14 +6,14 @@
     </header>
 
     <div class="search-bar">
-        <nav class="nav">
+      <nav class="nav">
         <button type="button" class="btn back" @click="volverDashboard">⬅ Volver</button>
       </nav>
+
       <input
         type="text"
         v-model="query"
         placeholder="Buscar plataforma..."
-        @input="filtrarPlataformas"
       />
       <button class="btn buscar">Buscar</button>
     </div>
@@ -28,28 +28,31 @@
         {{ filtro }}
       </button>
     </div>
+
     <section class="resultados">
       <div v-if="resultadosFiltrados.length > 0" class="plataformas">
         <div
           class="plataforma-card"
           v-for="plataforma in resultadosFiltrados"
-          :key="plataforma.id"
+          :key="plataforma.id_plataforma"
         >
           <div class="plat-left">
             <div class="plat-avatar">
               {{ plataforma.nombre[0] }}
             </div>
-          
+
             <div class="plat-info">
               <h3>{{ plataforma.nombre }}</h3>
               <p>{{ plataforma.descripcion }}</p>
             </div>
           </div>
-        
-          <button class="btn detalle">Ver detalles</button>
+
+          <button class="btn detalle" @click="verPlanes(plataforma)">
+            Consultar
+          </button>
         </div>
       </div>
-    
+
       <p v-else class="no-resultados">No se encontraron resultados.</p>
     </section>
   </div>
@@ -59,17 +62,27 @@
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 
-// Datos simulados — reemplaza luego con una llamada a la API si lo necesitas
-const plataformas = ref([
-  { id: 1, nombre: "Netflix", categoria: "Streaming", descripcion: "Películas y series ilimitadas" },
-  { id: 2, nombre: "Spotify", categoria: "Música", descripcion: "Escucha millones de canciones" },
-  { id: 3, nombre: "Disney+", categoria: "Streaming", descripcion: "Series, películas y más de Disney" },
-  { id: 4, nombre: "Xbox Game Pass", categoria: "Videojuegos", descripcion: "Juegos ilimitados por suscripción" },
-  { id: 5, nombre: "Canva Pro", categoria: "Diseño", descripcion: "Herramientas profesionales de diseño" },
+type Plataforma = {
+  id_plataforma: number;
+  nombre: string;
+  categoria: string;
+  descripcion: string;
+};
+
+const router = useRouter();
+
+// ⚠️ IDs alineados con tu tabla `plataforma`
+const plataformas = ref<Plataforma[]>([
+  { id_plataforma: 1, nombre: "Spotify",     categoria: "Música",      descripcion: "Escucha millones de canciones" },
+  { id_plataforma: 2, nombre: "Disney+",     categoria: "Streaming",   descripcion: "Series, películas y más de Disney" },
+  { id_plataforma: 3, nombre: "HBO Max",     categoria: "Streaming",   descripcion: "Películas y series ilimitadas" },
+  { id_plataforma: 4, nombre: "Prime Video", categoria: "Streaming",   descripcion: "Películas y series ilimitadas" },
+  { id_plataforma: 5, nombre: "Crunchyroll", categoria: "Streaming",   descripcion: "Anime y contenido japonés" },
+  { id_plataforma: 6, nombre: "Xbox Game Pass", categoria: "Videojuegos", descripcion: "Juegos ilimitados por suscripción" },
+  { id_plataforma: 7, nombre: "Canva Pro",   categoria: "Diseño",      descripcion: "Herramientas profesionales de diseño" },
 ]);
 
 const query = ref("");
-const router = useRouter();
 const filtroSeleccionado = ref<string | null>(null);
 const filtros = ["Streaming", "Música", "Videojuegos", "Diseño", "Educación"];
 
@@ -82,17 +95,25 @@ const resultadosFiltrados = computed(() => {
 });
 
 function seleccionarFiltro(filtro: string) {
-  filtroSeleccionado.value = filtroSeleccionado.value === filtro ? null : filtro;
-}
-
-function filtrarPlataformas() {
-  // En un caso real podrías llamar a tu API aquí con el texto de búsqueda
+  filtroSeleccionado.value =
+    filtroSeleccionado.value === filtro ? null : filtro;
 }
 
 function volverDashboard() {
   router.push({ name: "dashboard" });
 }
+
+function verPlanes(plataforma: Plataforma) {
+  router.push({
+    name: "planes-plataforma",
+    params: {
+      id_plataforma: plataforma.id_plataforma, 
+      plataforma: plataforma.nombre,           
+    },
+  });
+}
 </script>
+
 
 <style scoped>
 .buscador {
