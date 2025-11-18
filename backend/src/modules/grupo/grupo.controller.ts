@@ -19,7 +19,10 @@ async createGroup(req: Request, res: Response) {
       nombre,
       id_jefe: jefe.id_usuario,
     });
-    await miembroGrupoRepo.addUserToGroup(jefe.id_usuario, group.id_grupo);
+    await miembroGrupoRepo.addMemberToGroup({
+      id_usuario: jefe.id_usuario,
+      id_grupo: group.id_grupo
+    });    
     return res.status(201).json({
       message: "Grupo creado con éxito",
       group,
