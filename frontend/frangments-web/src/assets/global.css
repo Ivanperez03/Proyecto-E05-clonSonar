@@ -1,0 +1,171 @@
+/* ------------------------------
+   PALETA CORPORATE PREMIUM
+------------------------------ */
+:root {
+  --primary: #2745f0;
+  --primary-dark: #1d34b8;
+  --secondary: #64748b;
+  --background: #f6f8fc;
+  --card-bg: #ffffff;
+  --text: #1e293b;
+  --text-light: #475569;
+  --danger: #e11d48;
+  --success: #16a34a;
+
+  --radius: 12px;
+  --shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* ------------------------------
+   RESET / BASE GENERAL
+------------------------------ */
+body {
+  font-family: Inter, system-ui, sans-serif;
+  background: var(--background);
+  color: var(--text);
+  margin: 0;
+}
+
+/* Suave fade-in */
+.fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ------------------------------
+   TARJETAS
+------------------------------ */
+.ui-card {
+  background: var(--card-bg);
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.ui-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+}
+
+/* ------------------------------
+   INPUTS
+------------------------------ */
+.ui-input {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  transition: border-color 0.25s ease;
+}
+
+.ui-input:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+/* ------------------------------
+   BOTONES CORPORATIVOS
+------------------------------ */
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.6rem 1.1rem;
+  border-radius: var(--radius);
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: background 0.25s ease, transform 0.25s ease;
+}
+
+.ui-btn:hover {
+  transform: translateY(-3px);
+}
+
+.ui-btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.ui-btn-primary:hover {
+  background: var(--primary-dark);
+}
+
+.ui-btn-secondary {
+  background: var(--secondary);
+  color: white;
+}
+
+.ui-btn-secondary:hover {
+  background: #475569;
+}
+
+.ui-btn-danger {
+  background: var(--danger);
+  color: white;
+}
+
+.ui-btn-danger:hover {
+  background: #be123c;
+}
+
+.ui-btn-success {
+  background: var(--success);
+  color: white;
+}
+
+.ui-btn-success:hover {
+  background: #15803d;
+}
+
+/* Botón pequeño */
+.ui-btn-sm {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+}
+
+/* ------------------------------
+   TITULARES
+------------------------------ */
+.ui-title {
+  font-size: 1.7rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+
+.ui-subtitle {
+  color: var(--text-light);
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ------------------------------
+   CONTENEDORES
+------------------------------ */
+.ui-section {
+  width: 100%;
+  max-width: 900px;
+  margin-bottom: 1.6rem;
+}
+
+/* LISTAS */
+.ui-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ui-list li {
+  background: #f1f5f9;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  border-radius: var(--radius);
+  font-size: 0.92rem;
+}

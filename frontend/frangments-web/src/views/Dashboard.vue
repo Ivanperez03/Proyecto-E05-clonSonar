@@ -1,46 +1,81 @@
 <template>
-  <div class="dash">
-    <header class="topbar">
-      <div>
-        <h2>Panel Fragments</h2>
-        <p class="subtitle">Bienvenido, {{ auth.nombre || "usuario" }}.</p>
+  <div class="dashboard">
+    <div class="watermark"></div>
+
+    <!-- TOP BAR -->
+    <header class="topbar animate-fade">
+      <div class="title-area">
+        <h2 class="title">Panel Fragments</h2>
+        <p class="subtitle">Bienvenido, {{ auth.nombre || "usuario" }} 👋</p>
       </div>
 
       <div class="actions">
-        <button class="btn secondary" @click="irCuenta">Mi cuenta</button>
-        <!--<button class="btn secondary" @click="irBuscador">Buscar plataformas</button>-->
-        <button class="btn secondary" @click="irAdmin">Admin</button>
-        <button class="btn logout" @click="logout">Cerrar sesión</button>
+        <button class="btn secondary" @click="irCuenta">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M15.75 6.75a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.25a7.5 7.5 0 0115 0" />
+          </svg>
+          Mi cuenta
+        </button>
+
+        <button class="btn secondary" @click="irAdmin">
+          <span class="iconify">⚙️</span>
+          Admin
+        </button>
+
+        <button class="btn logout" @click="logout">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none"
+            viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6A2.25 2.25 0 005.25 5.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M18 12H9" />
+          </svg>
+          Salir
+        </button>
       </div>
     </header>
 
-    <section class="cards">
-      <article class="card">
-        <h2>Buscar planes</h2> 
-        <button class="btn small" @click="irBuscador">Ir</button>
+    <!-- TARJETAS PRINCIPALES -->
+    <section class="cards animate-fade-delayed">
+      <article class="card float">
+        <h2 class="card-title">Buscar planes</h2>
+        <p class="card-text">Encuentra suscripciones compartidas activas.</p>
+        <button class="btn small" @click="irBuscador">Explorar</button>
       </article>
 
-      <article class="card">
-        <h2>Crear planes</h2>
-        <button class="btn small" @click="irOfertas">Ir</button>
+      <article class="card float">
+        <h2 class="card-title">Crear planes</h2>
+        <p class="card-text">Publica tu oferta para otros usuarios.</p>
+        <button class="btn small" @click="irOfertas">Crear</button>
       </article>
     </section>
 
-    <section class="plataformas">
-      <h3>Plataformas disponibles</h3>
+    <!-- PLATAFORMAS -->
+    <section class="plataformas animate-fade-delayed2">
+      <h3 class="plat-title">Plataformas disponibles</h3>
+
       <div class="plataformas-grid">
-        <div v-for="(plataforma, i) in plataformas" :key="i" class="plataforma-card">
+        <div
+          v-for="(plataforma, i) in plataformas"
+          :key="i"
+          class="plataforma-card float"
+        >
           <h4>{{ plataforma.nombre }}</h4>
-          <p>{{ plataforma.descripcion }}</p>
-          <button class="btn small" @click="verPlataforma(plataforma.id)">Ver detalles</button>
+          <p class="desc">{{ plataforma.descripcion }}</p>
+
+          <button class="btn small" @click="verPlataforma(plataforma.id)">
+            Ver detalles
+          </button>
         </div>
       </div>
     </section>
+
+    
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import apiax from "@/apiAxios";
@@ -48,12 +83,13 @@ import apiax from "@/apiAxios";
 const router = useRouter();
 const auth = useAuthStore();
 const users = ref<any[]>([]);
+
 const plataformas = ref([
   { id: 1, nombre: "Netflix", descripcion: "Compartes tu cuenta con 3 personas." },
   { id: 2, nombre: "Spotify", descripcion: "Plan familiar activo." },
   { id: 3, nombre: "Disney+", descripcion: "Suscripción mensual compartida." },
   { id: 4, nombre: "HBO Max", descripcion: "Cuenta Premium." },
-  { id: 5, nombre: "Prime Video", descripcion: "Plan anual con envío gratis." },
+  { id: 5, nombre: "Prime Video", descripcion: "Plan anual con envío gratis." }
 ]);
 
 onMounted(async () => {
@@ -73,127 +109,206 @@ async function logout() {
   router.push({ name: "login" });
 }
 
-function irCuenta() {
-  router.push({ name: "cuenta" }); // define esta ruta en tu router
-}
-
-function irBuscador() {
-  router.push({ name: "buscador" }); // define esta ruta en tu router
-}
-
-function irOfertas() {
-  router.push({ name: "ofertar" }); // define esta ruta en tu router
-}
-
-function irAdmin() {
-  router.push({ name: "admin" }); // define esta ruta en tu router
-}
-
+function irCuenta() { router.push({ name: "cuenta" }); }
+function irBuscador() { router.push({ name: "buscador" }); }
+function irOfertas() { router.push({ name: "ofertar" }); }
+function irAdmin() { router.push({ name: "admin" }); }
 function verPlataforma(id: number) {
   router.push({ name: "plataforma-detalle", params: { id } });
 }
 </script>
 
-<style scoped>
-.dash {
-  padding: 2rem;
-  color: #241272;
-  background: linear-gradient(135deg, #dde0eb, #7593ec);
+<style>
+/* === CONTENEDOR GENERAL === */
+.dashboard {
   min-height: 100vh;
+  padding: 2rem;
+  background: radial-gradient(circle at top left, #4e54c8, #353a7a 70%);
+  color: white;
   font-family: "Inter", sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
 }
 
+/* === TOPBAR === */
 .topbar {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
   flex-wrap: wrap;
-  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 2.2rem;
+  font-weight: 700;
 }
 
 .subtitle {
-  color: #374151;
-  margin-top: 0.25rem;
+  opacity: 0.85;
+  font-size: 1rem;
 }
 
 .actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
 
+/* === BOTONES === */
 .btn {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
   border: none;
   cursor: pointer;
-  border-radius: 0.5rem;
+  border-radius: 0.6rem;
   padding: 0.6rem 1rem;
   font-weight: 600;
-  transition: all 0.3s ease;
+  transition: 0.25s;
 }
 
 .btn.secondary {
-  background: #4b6cb7;
-  color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+  color: white;
+  backdrop-filter: blur(6px);
 }
 
 .btn.secondary:hover {
-  background: #3c5aa6;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-3px) scale(1.03);
 }
 
 .btn.logout {
   background: #ef4444;
-  color: #fff;
+  color: white;
 }
 
 .btn.logout:hover {
-  background: #dc2626;
+  background: #d62828;
+  transform: translateY(-3px) scale(1.03);
 }
 
+.iconify {
+  font-size: 1.2rem;
+}
+
+/* === CARDS PRINCIPALES === */
 .cards {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
+  gap: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .card {
-  background: #6b87ad;
-  padding: 1rem 1.5rem;
-  border-radius: 1rem;
-  color: rgb(0, 0, 0);
-  min-width: 180px;
   flex: 1;
+  min-width: 230px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 1.7rem;
+  border-radius: 1.2rem;
   text-align: center;
+  backdrop-filter: blur(12px);
 }
 
+.card-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.card-text {
+  opacity: 0.9;
+  margin-bottom: 1rem;
+}
+
+/* === PLATAFORMAS === */
 .plataformas {
-  background: rgba(255, 255, 255, 0.3);
-  padding: 1rem;
-  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 1.5rem;
+  border-radius: 1.2rem;
+  backdrop-filter: blur(10px);
+}
+
+.plat-title {
+  margin-bottom: 1rem;
+  font-weight: 700;
 }
 
 .plataformas-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 1rem;
   margin-top: 1rem;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
 }
 
 .plataforma-card {
-  background: #1f2937;
+  background: rgba(255, 255, 255, 0.20);
   padding: 1rem;
   border-radius: 1rem;
-  color: #fff;
+  transition: 0.3s ease;
   text-align: center;
-  transition: transform 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
-.plataforma-card:hover {
-  transform: translateY(-4px);
+.desc {
+  opacity: 0.9;
+  margin-bottom: 0.7rem;
+}
+
+/* === EFECTO FLOTANTE === */
+.float {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.float:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+}
+
+/* === ANIMACIONES === */
+.animate-fade {
+  animation: fadeIn 0.4s ease;
+}
+
+.animate-fade-delayed {
+  animation: fadeIn 0.6s ease;
+}
+
+.animate-fade-delayed2 {
+  animation: fadeIn 0.8s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .btn.small {
-  margin-top: 0.5rem;
   padding: 0.4rem 0.8rem;
   font-size: 0.85rem;
 }
+
+
+.watermark {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 800px;
+  height: 800px;
+  transform: translate(-50%, -50%);
+  background-image: url('@/assets/new_logo_Fragments.png');
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
+  opacity: 0.18;       /* intensidad de la marca de agua */
+  pointer-events: none; /* no bloquea clics */
+  z-index: 1;
+  filter: blur(0.5px);
+}
+
+.dashboard {
+  position: relative;
+  z-index: 2; /* asegura que todo el contenido esté encima */
+}
+
 </style>
+
