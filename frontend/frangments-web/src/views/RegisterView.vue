@@ -103,100 +103,138 @@ const goToSignIn = () => router.push("/login");
 </script>
 
 <style scoped>
-/* Tu CSS existente */
+/* ===== CONTENEDOR GENERAL ===== */
 .register-container {
+  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
-  background: linear-gradient(135deg, #ffffff, #8ca6f7);
+  padding: 2rem;
+  background: linear-gradient(120deg, #e0f2ff, #a2b8d9, #1e293b);
   font-family: "Inter", sans-serif;
-  padding: 1rem;
 }
 
+/* ===== TARJETA ===== */
 .register-card {
-  background: white;
-  padding: 2rem 2.5rem;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 420px;
+  max-width: 460px;
+  padding: 2.8rem 2.6rem;
+  border-radius: 18px;
+
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(18px);
+
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 25px 50px rgba(15, 23, 42, 0.25);
+
+  animation: fadeUp 0.6s ease;
 }
 
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== TÍTULOS ===== */
 h1 {
   text-align: center;
-  color: #1a1a1a;
-  margin-bottom: 0.5rem;
+  font-size: 1.9rem;
+  font-weight: 800;
+  margin-bottom: 0.4rem;
+
+  background: linear-gradient(120deg, #1e293b, #312e81);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .subtitle {
   text-align: center;
-  color: #666;
-  margin-bottom: 2rem;
+  color: rgba(30, 41, 59, 0.75);
   font-size: 0.95rem;
+  margin-bottom: 2rem;
 }
 
+/* ===== FORMULARIO ===== */
 .form-group {
-  margin-bottom: 1rem;
   display: flex;
   flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1.2rem;
 }
 
 label {
   font-weight: 600;
-  color: #333;
-  margin-bottom: 0.4rem;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
+  color: #0f172a;
 }
 
+/* ===== INPUTS ===== */
 input {
-  padding: 0.7rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.2s ease;
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(255, 255, 255, 0.65);
+  font-size: 0.95rem;
+  transition: 0.25s ease;
+}
+
+input:hover {
+  background: rgba(255, 255, 255, 0.85);
 }
 
 input:focus {
   outline: none;
-  border-color: #4b6cb7;
+  border-color: #6366f1;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35);
 }
 
+/* ===== BOTÓN ===== */
 .btn-primary {
   width: 100%;
-  background-color: #4b6cb7;
+  padding: 0.85rem;
+  margin-top: 0.6rem;
+
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+
+  background: linear-gradient(135deg, #4f46e5, #22d3ee);
   color: white;
   border: none;
-  padding: 0.9rem;
-  font-size: 1rem;
-  border-radius: 8px;
+
   cursor: pointer;
-  transition: all 0.25s ease;
-  margin-top: 0.5rem;
+  transition: 0.25s ease;
+  box-shadow: 0 10px 30px rgba(45, 70, 185, 0.35);
 }
 
 .btn-primary:hover {
-  background-color: #3551a1;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 35px rgba(45, 70, 185, 0.45);
+  filter: brightness(1.05);
 }
 
+/* ===== ERROR ===== */
 .error {
-  color: #d93025;
-  text-align: center;
+  color: #e11d48;
   font-size: 0.9rem;
+  text-align: center;
+  margin-top: -0.5rem;
   margin-bottom: 1rem;
 }
 
+/* ===== LINK LOGIN ===== */
 .login-link {
   text-align: center;
-  margin-top: 1.5rem;
+  margin-top: 1.6rem;
   font-size: 0.95rem;
-  color: #555;
+  color: #334155;
 }
 
 .login-link a {
-  color: #4b6cb7;
-  text-decoration: none;
-  font-weight: 600;
+  color: #4f46e5;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .login-link a:hover {

@@ -6,14 +6,14 @@
     </header>
 
     <div class="search-bar">
-        <nav class="nav">
+      <nav class="nav">
         <button type="button" class="btn back" @click="volverDashboard">⬅ Volver</button>
       </nav>
+
       <input
         type="text"
         v-model="query"
         placeholder="Buscar plataforma..."
-        @input="filtrarPlataformas"
       />
       <button class="btn buscar">Buscar</button>
     </div>
@@ -31,10 +31,25 @@
 
     <section class="resultados">
       <div v-if="resultadosFiltrados.length > 0" class="plataformas">
-        <div class="plataforma-card" v-for="plataforma in resultadosFiltrados" :key="plataforma.id">
-          <h3>{{ plataforma.nombre }}</h3>
-          <p>{{ plataforma.descripcion }}</p>
-          <button class="btn detalle">Ver detalles</button>
+        <div
+          class="plataforma-card"
+          v-for="plataforma in resultadosFiltrados"
+          :key="plataforma.id_plataforma"
+        >
+          <div class="plat-left">
+            <div class="plat-avatar">
+              {{ plataforma.nombre[0] }}
+            </div>
+
+            <div class="plat-info">
+              <h3>{{ plataforma.nombre }}</h3>
+              <p>{{ plataforma.descripcion }}</p>
+            </div>
+          </div>
+
+          <button class="btn detalle" @click="verPlanes(plataforma)">
+            Consultar
+          </button>
         </div>
       </div>
 
@@ -47,17 +62,27 @@
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 
-// Datos simulados — reemplaza luego con una llamada a la API si lo necesitas
-const plataformas = ref([
-  { id: 1, nombre: "Netflix", categoria: "Streaming", descripcion: "Películas y series ilimitadas" },
-  { id: 2, nombre: "Spotify", categoria: "Música", descripcion: "Escucha millones de canciones" },
-  { id: 3, nombre: "Disney+", categoria: "Streaming", descripcion: "Series, películas y más de Disney" },
-  { id: 4, nombre: "Xbox Game Pass", categoria: "Videojuegos", descripcion: "Juegos ilimitados por suscripción" },
-  { id: 5, nombre: "Canva Pro", categoria: "Diseño", descripcion: "Herramientas profesionales de diseño" },
+type Plataforma = {
+  id_plataforma: number;
+  nombre: string;
+  categoria: string;
+  descripcion: string;
+};
+
+const router = useRouter();
+
+// ⚠️ IDs alineados con tu tabla `plataforma`
+const plataformas = ref<Plataforma[]>([
+  { id_plataforma: 1, nombre: "Spotify",     categoria: "Música",      descripcion: "Escucha millones de canciones" },
+  { id_plataforma: 2, nombre: "Disney+",     categoria: "Streaming",   descripcion: "Series, películas y más de Disney" },
+  { id_plataforma: 3, nombre: "HBO Max",     categoria: "Streaming",   descripcion: "Películas y series ilimitadas" },
+  { id_plataforma: 4, nombre: "Prime Video", categoria: "Streaming",   descripcion: "Películas y series ilimitadas" },
+  { id_plataforma: 5, nombre: "Crunchyroll", categoria: "Streaming",   descripcion: "Anime y contenido japonés" },
+  { id_plataforma: 6, nombre: "Xbox Game Pass", categoria: "Videojuegos", descripcion: "Juegos ilimitados por suscripción" },
+  { id_plataforma: 7, nombre: "Canva Pro",   categoria: "Diseño",      descripcion: "Herramientas profesionales de diseño" },
 ]);
 
 const query = ref("");
-const router = useRouter();
 const filtroSeleccionado = ref<string | null>(null);
 const filtros = ["Streaming", "Música", "Videojuegos", "Diseño", "Educación"];
 
@@ -70,155 +95,292 @@ const resultadosFiltrados = computed(() => {
 });
 
 function seleccionarFiltro(filtro: string) {
-  filtroSeleccionado.value = filtroSeleccionado.value === filtro ? null : filtro;
-}
-
-function filtrarPlataformas() {
-  // En un caso real podrías llamar a tu API aquí con el texto de búsqueda
+  filtroSeleccionado.value =
+    filtroSeleccionado.value === filtro ? null : filtro;
 }
 
 function volverDashboard() {
   router.push({ name: "dashboard" });
 }
+
+function verPlanes(plataforma: Plataforma) {
+  router.push({
+    name: "planes-plataforma",
+    params: {
+      id_plataforma: plataforma.id_plataforma, 
+      plataforma: plataforma.nombre,           
+    },
+  });
+}
 </script>
+
 
 <style scoped>
 .buscador {
-  padding: 2rem;
-  background: linear-gradient(135deg, #ffffff, #8ca6f7);
   min-height: 100vh;
-  font-family: "Inter", sans-serif;
-  color: #1f2937;
+  padding: 2.5rem 1.5rem 3rem;
+  background: linear-gradient(120deg, #e0f2ff, #a2b8d9, #1e293b);
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  color: #0f172a;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
+/* ===== HEADER ===== */
 .header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.8rem;
+}
+
+.header h2 {
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: #111827;
 }
 
 .subtitle {
-  color: #374151;
+  margin-top: 0.25rem;
+  color: #4b5563;
   font-size: 0.95rem;
 }
 
+/* ===== SEARCH BAR ===== */
+.search-bar {
+  width: 100%;
+  max-width: 720px;
+
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+
+  margin-bottom: 1.4rem;
+}
+
+/* nav solo contiene el botón volver */
 .nav {
   display: flex;
-  gap: 10rem;
 }
 
-.search-bar {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  max-width: 500px;
-  margin-bottom: 1.5rem;
-}
-
-.search-bar input {
-  flex: 1;
-  padding: 0.8rem 1rem;
-  border-radius: 0.5rem;
-  border: 1px solid #cbd5e1;
-  font-size: 1rem;
-  outline: none;
-}
-
-.search-bar input:focus {
-  border-color: #4b6cb7;
-}
-
+/* Botones base */
 .btn {
   border: none;
   cursor: pointer;
-  border-radius: 0.5rem;
-  padding: 0.7rem 1.2rem;
+  border-radius: 999px;
+  padding: 0.65rem 1.2rem;
   font-weight: 600;
-  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
 }
 
+/* Volver */
+.btn.back {
+  background: rgba(15, 23, 42, 0.85);
+  color: #e5e7eb;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.45);
+}
+
+.btn.back:hover {
+  transform: translateX(-2px);
+  box-shadow: 0 14px 26px rgba(15, 23, 42, 0.6);
+}
+
+/* Input búsqueda */
+.search-bar input {
+  flex: 1;
+  padding: 0.8rem 1rem;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.95rem;
+  outline: none;
+  background: #f9fafb;
+  color: #0f172a;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-bar input::placeholder {
+  color: #9ca3af;
+}
+
+.search-bar input:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.35);
+}
+
+/* Botón buscar */
 .btn.buscar {
-  background: #4b6cb7;
-  color: #fff;
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  color: #ffffff;
+  box-shadow: 0 12px 24px rgba(79, 70, 229, 0.45);
 }
 
 .btn.buscar:hover {
-  background: #3c5aa6;
+  transform: translateY(-2px);
+  box-shadow: 0 16px 30px rgba(79, 70, 229, 0.6);
 }
 
+/* ===== FILTROS ===== */
 .filters {
+  width: 100%;
+  max-width: 720px;
   display: flex;
-  gap: 0.8rem;
+  gap: 0.6rem;
   flex-wrap: wrap;
   justify-content: center;
   margin-bottom: 2rem;
 }
 
 .filter-btn {
-  background: #e5e7eb;
-  border: none;
-  border-radius: 0.5rem;
-  padding: 0.6rem 1.2rem;
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 999px;
+  padding: 0.45rem 1.1rem;
   cursor: pointer;
   font-weight: 500;
-  color: #1f2937;
-  transition: all 0.3s ease;
+  font-size: 0.85rem;
+  color: #111827;
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  transition: 0.2s ease;
 }
 
 .filter-btn:hover {
-  background: #c7d2fe;
+  background: #e0e7ff;
 }
 
 .filter-btn.active {
-  background: #4b6cb7;
-  color: #fff;
+  background: #4f46e5;
+  color: #ffffff;
+  border-color: transparent;
 }
 
+/* ===== RESULTADOS / CONTENEDOR OSCURO ===== */
 .resultados {
   width: 100%;
-  max-width: 900px;
+  max-width: 1040px;
+
+  background: rgba(15, 23, 42, 0.97);
+  border-radius: 1.7rem;
+  padding: 2rem 2.2rem;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.9);
+
+  color: #e5e7eb;
 }
 
+/* Grid de plataformas */
 .plataformas {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.2rem;
 }
 
+/* Tarjeta de cada plataforma */
+/* Grid de plataformas */
+.plataformas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.3rem;
+}
+
+/* Tarjeta estilo "Plataformas disponibles" */
 .plataforma-card {
-  background: rgba(255, 255, 255, 0.6);
-  padding: 1.5rem;
-  border-radius: 1rem;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+
+  padding: 0.9rem 1.4rem;
+  border-radius: 999px;
+
+  background: radial-gradient(circle at left, #2563eb, #020617 72%);
+  border: 1px solid rgba(148, 163, 184, 0.5);
+
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.7);
+  color: #e5e7eb;
+
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
-.plataforma-card h3 {
-  margin-bottom: 0.5rem;
-  color: #1f2937;
+.plataforma-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 38px rgba(15, 23, 42, 0.9);
 }
 
-.plataforma-card p {
-  color: #374151;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
+/* Parte izquierda: avatar + texto */
+.plat-left {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
 }
 
+/* Avatar redondo con inicial */
+.plat-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(circle at top, #fedf57, #f97316);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1rem;
+  color: #111827;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.6);
+}
+
+/* Texto plataforma */
+.plat-info h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.plat-info p {
+  margin: 0.1rem 0 0;
+  font-size: 0.85rem;
+  color: #d1d5db;
+}
+
+/* Botón "Ver detalles" estilo pill */
 .btn.detalle {
-  background: #4b6cb7;
-  color: white;
+  background: transparent;
+  color: #e5e7eb;
+  border: 1px solid rgba(248, 250, 252, 0.7);
+  padding: 0.45rem 1.2rem;
+  font-size: 0.85rem;
+  border-radius: 999px;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.7);
 }
 
 .btn.detalle:hover {
-  background: #3c5aa6;
+  background: #f9fafb;
+  color: #111827;
 }
 
-.no-resultados {
-  text-align: center;
-  color: #6b7280;
-  margin-top: 2rem;
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .buscador {
+    padding: 1.8rem 1rem 2.5rem;
+  }
+
+  .search-bar {
+    grid-template-columns: 1fr;
+    row-gap: 0.7rem;
+  }
+
+  .nav {
+    justify-content: flex-start;
+  }
+
+  .btn.back {
+    width: fit-content;
+  }
+
+  .resultados {
+    padding: 1.5rem 1.3rem;
+  }
 }
 </style>
