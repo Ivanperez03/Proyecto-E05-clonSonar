@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { miembroGrupoRepo } from "./miembro_grupo.repository";  // Repositorio para manejar los miembros de los grupos
+import { miembroGrupoRepo } from "./miembro_grupo.repository";  
 
 export const miembroGrupoController = {
   // Agregar un miembro a un grupo

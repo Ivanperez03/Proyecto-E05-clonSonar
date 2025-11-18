@@ -7,7 +7,7 @@ export const carteraController = {
     const { id_usuario } = req.params;
 
     try {
-      const saldo = await carteraRepo.getSaldoByUserId(Number(id_usuario));
+      const saldo = await carteraRepo.findByUserId(Number(id_usuario));
       if (saldo === null) {
         return res.status(404).json({ message: "Cartera no encontrada para el usuario" });
       }

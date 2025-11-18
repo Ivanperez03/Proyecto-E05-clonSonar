@@ -1,7 +1,13 @@
 import { db } from '../../config/db';
 
 export const miembroGrupoRepo = {
-  async addUserToGroup(id_usuario: number, id_grupo: number) {
+  async addMemberToGroup({
+    id_grupo,
+    id_usuario,
+  }: {
+    id_grupo: number;
+    id_usuario: number;
+  }) {
     try {
       const { rows } = await db.query(
         `INSERT INTO miembro_grupo (id_grupo, id_usuario, fecha_ingreso) 
