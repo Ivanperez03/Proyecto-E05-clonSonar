@@ -15,14 +15,11 @@ describe("accountService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
-
   it("getUserData hace GET /user/data y devuelve data", async () => {
     (apiax.get as any).mockResolvedValueOnce({
       data: { saldo: 50, grupos: [], suscripciones: [] },
     });
-
     const res = await accountService.getUserData();
-
     expect(apiax.get).toHaveBeenCalledWith("/user/data");
     expect(res).toEqual({ saldo: 50, grupos: [], suscripciones: [] });
   });

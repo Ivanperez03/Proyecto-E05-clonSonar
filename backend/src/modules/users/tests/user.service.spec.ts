@@ -27,7 +27,6 @@ describe("userService.register", () => {
   it("crea usuario si email y teléfono no existen", async () => {
     // devuelve null si no existe usuario
     (userRepo.existsByEmailOrPhone as any).mockResolvedValue(null);
-
     // create devuelve el usuario insertado
     (userRepo.insert as any).mockResolvedValue({
       id_usuario: 1,
@@ -35,9 +34,7 @@ describe("userService.register", () => {
       mail: baseUser.email,
       telefono: baseUser.telefono,
     });
-
     const u = await userService.register(baseUser);
-
     expect(userRepo.existsByEmailOrPhone).toHaveBeenCalledWith(
       baseUser.email,
       baseUser.telefono
