@@ -51,7 +51,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import apiax from "../apiAxios"; // 🔹 usamos el cliente Axios con cookies
+import apiax from "@/apiAxios";
 
 const router = useRouter();
 
