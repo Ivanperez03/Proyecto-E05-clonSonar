@@ -35,6 +35,7 @@ async createGroup(req: Request, res: Response) {
     });
   }
   },
+  
   async getAllGroups(req: Request, res: Response) {
     try {
       const groups = await grupoRepo.getAllGroups();
@@ -44,18 +45,41 @@ async createGroup(req: Request, res: Response) {
       return res.status(500).json({ message: "Error al obtener los grupos", error: error.message });
     }
   },
-
-  async getGroupById(req: Request, res: Response) {
-    const { id_grupo } = req.params;
+  async getMyGroupsAsJefe(req: Request, res: Response) {
     try {
-      const group = await grupoRepo.findById(Number(id_grupo));
-      if (!group) {
-        return res.status(404).json({ message: "Grupo no encontrado" });
-      }
-      return res.json(group);
+      console.log("Llamada a getMyGroupsAsJefe recibida"); // <-- log inicial
+      const jwtPayload = (req as any).jwt as { email: string };
+      console.log("JWT recibido:", jwtPayload); // <-- ver token/usuario
+  
+      if (!jwtPayload?.email) return res.status(401).json({ message: "No autorizado" });
+  
+      const user = await userRepo.findByEmail(jwtPayload.email);
+      console.log("Usuario encontrado:", user); // <-- ver usuario
+  
+      if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
+  
+      const grupos = await grupoRepo.getGroupsByJefeId(user.id_usuario);
+      console.log("Grupos del usuario:", grupos); // <-- log de la respuesta
+  
+      return res.json(grupos);
     } catch (error: any) {
-      console.error("Error obteniendo el grupo:", error);
-      return res.status(500).json({ message: "Error al obtener el grupo", error: error.message });
+      console.error("Error obteniendo grupos del usuario:", error);
+      return res.status(500).json({ message: "Error al obtener grupos", error: error.message });
     }
+  }
+,
+  
+async getGroupById(req: Request, res: Response) {
+  const { id_grupo } = req.params;
+  try {
+    const group = await grupoRepo.findById(Number(id_grupo));
+    if (!group) {
+      return res.status(404).json({ message: "Grupo no encontrado" });
+    }
+    return res.json(group);
+  } catch (error: any) {
+    console.error("Error obteniendo el grupo:", error);
+    return res.status(500).json({ message: "Error al obtener el grupo", error: error.message });
+  }
   },
 };

@@ -32,6 +32,17 @@ export const grupoRepo = {
       throw new Error("No se pudieron obtener los grupos");
     }
   },
+  async getGroupsByJefeId(id_jefe: number) {
+    const { rows } = await db.query(
+      `SELECT id_grupo, nombre, fecha_creacion, estado, id_jefe
+       FROM grupo
+       WHERE id_jefe = $1
+       ORDER BY fecha_creacion`,
+      [id_jefe]
+    );
+    return rows;
+  },
+  
   async getGruposByUserId(id_usuario: number) {
     const { rows } = await db.query(
       `SELECT

@@ -6,14 +6,18 @@
     </header>
 
     <form class="form" @submit.prevent="crearOferta">
+      <!-- Plataforma -->
       <div class="form-group">
         <label for="plataforma">Plataforma del plan</label>
-        <select id="plataforma" v-model="form.plataforma" required>
+        <select id="plataforma" v-model.number="form.plataforma" required>
           <option disabled value="">Selecciona una plataforma</option>
-          <option v-for="p in plataformas" :key="p" :value="p">{{ p }}</option>
+          <option v-for="p in plataformas" :key="p.id_plataforma" :value="p.id_plataforma">
+            {{ p.nombre }}
+          </option>
         </select>
       </div>
 
+      <!-- Precio -->
       <div class="form-group">
         <label for="precio">Precio (€)</label>
         <input
@@ -27,84 +31,148 @@
         />
       </div>
 
+      <!-- Fecha de vencimiento -->
       <div class="form-group">
-        <label for="fecha">Fecha de vencimiento</label>
+        <label for="fecha_vencimiento">Fecha de vencimiento</label>
         <input
           type="date"
           id="fecha_vencimiento"
           v-model="form.fecha_vencimiento"
-          placeholder="Tu nombre"
           required
         />
       </div>
 
+      <!-- Elegir entre grupo existente o nuevo -->
       <div class="form-group">
-        <label for="grupo">Nombre del grupo</label>
+        <label>¿Qué deseas hacer?</label>
+        <div class="radio-group">
+          <label>
+            <input type="radio" value="existente" v-model="opcion" /> Grupo existente
+          </label>
+          <label>
+            <input type="radio" value="nuevo" v-model="opcion" /> Crear nuevo grupo
+          </label>
+        </div>
+      </div>
+
+      <!-- Grupo existente -->
+      <div class="form-group" v-if="opcion === 'existente'">
+        <label>Selecciona un grupo existente</label>
+        <select v-model.number="form.id_grupo">
+          <option disabled value="">Selecciona un grupo</option>
+          <option v-for="g in grupos" :key="g.id_grupo" :value="g.id_grupo">
+            {{ g.nombre }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Nuevo grupo -->
+      <div class="form-group" v-if="opcion === 'nuevo'">
+        <label>Nombre del nuevo grupo</label>
         <input
           type="text"
-          id="grupo"
-          v-model="form.grupo"
-          placeholder="Ejemplo: CompartirNetflix"
-          required
+          v-model="form.nuevo_grupo"
+          placeholder="Escribe el nombre del grupo"
         />
       </div>
 
+      <!-- Botones -->
       <div class="botones">
         <button class="btn publicar" type="submit">Publicar oferta</button>
         <button type="button" class="btn back" @click="volverDashboard">⬅ Volver</button>
       </div>
     </form>
 
-    <div v-if="mensaje" class="mensaje">
-      {{ mensaje }}
-    </div>
+    <div v-if="mensaje" class="mensaje">{{ mensaje }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import apiax from "@/apiAxios"; // Cliente Axios de tu proyecto
-import { useAuthStore } from "@/stores/auth";
+import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import apiax from "@/apiAxios";
 
 const router = useRouter();
-const auth = useAuthStore();
 
-const plataformas = [
-  "Netflix",
-  "Spotify",
-  "Disney+",
-  "HBO Max",
-  "Amazon Prime Video",
-  "Crunchyroll",
-  "Apple TV+",
-];
+const grupos = ref<Array<{ id_grupo: number; nombre: string }>>([]);
+const plataformas = ref<Array<{ id_plataforma: number; nombre: string }>>([]);
 
 const form = ref({
-  plataforma: "",
+  plataforma: "" as number | "",
   precio: null as number | null,
-  fecha_vencimiento: Date || "",
-  grupo: "",
+  fecha_vencimiento: "",
+  id_grupo: "" as number | "",
+  nuevo_grupo: "",
 });
 
+const opcion = ref("existente");
 const mensaje = ref("");
 
-async function crearOferta() {
+onMounted(async () => {
   try {
-    if (!form.value.plataforma || !form.value.precio || !form.value.fecha_vencimiento || !form.value.grupo) {
-      mensaje.value = "Por favor, completa todos los campos.";
-      return;
+    const token = localStorage.getItem("token");
+
+    // Traer grupos
+    const respGrupos = await apiax.get("/grupo/mis-grupos", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    grupos.value = respGrupos.data;
+
+    // Traer plataformas
+    const respPlataformas = await apiax.get("/plataforma", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    plataformas.value = respPlataformas.data;
+  } catch (error) {
+    console.error("Error cargando grupos o plataformas:", error);
+    mensaje.value = "❌ Error al cargar los grupos o plataformas";
+  }
+});
+
+async function crearOferta() {
+  if (
+    !form.value.plataforma ||
+    !form.value.precio ||
+    !form.value.fecha_vencimiento ||
+    (opcion.value === "existente" && !form.value.id_grupo) ||
+    (opcion.value === "nuevo" && !form.value.nuevo_grupo)
+  ) {
+    mensaje.value = "Por favor completa todos los campos";
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem("token");
+    let id_grupo_final = form.value.id_grupo;
+
+    // Crear nuevo grupo si se seleccionó esa opción
+    if (opcion.value === "nuevo") {
+      const respNuevoGrupo = await apiax.post(
+        "/grupos",
+        { nombre: form.value.nuevo_grupo },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      id_grupo_final = respNuevoGrupo.data.group.id_grupo;
     }
 
-    // Simulación de envío a la API
-    console.log("Oferta enviada:", form.value);
-    mensaje.value = "✅ Oferta publicada con éxito.";
+    // Publicar oferta
+    await apiax.post(
+      "/plan_sub/subscribe",
+      {
+        id_plataforma: Number(form.value.plataforma),
+        precio: form.value.precio,
+        fecha_vencimiento: form.value.fecha_vencimiento,
+        id_grupo: Number(id_grupo_final),
+      },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-    // Limpiar formulario
-    form.value = { plataforma: "", precio: null, fecha_vencimiento: Date, grupo: "" };
-  } catch (error) {
+    mensaje.value = "✅ Oferta publicada con éxito";
+    form.value = { plataforma: "", precio: null, fecha_vencimiento: "", id_grupo: "", nuevo_grupo: "" };
+    opcion.value = "existente";
+  } catch (error: any) {
     console.error(error);
-    mensaje.value = "❌ Error al publicar la oferta.";
+    mensaje.value = error.response?.data?.message || "❌ Error al publicar la oferta";
   }
 }
 
@@ -125,25 +193,9 @@ function volverDashboard() {
   align-items: center;
   gap: 2rem;
 }
-
-/* HEADER */
-.header {
-  text-align: center;
-}
-
-.header h2 {
-  font-size: 2rem;
-  font-weight: 800;
-  color: #111827;
-}
-
-.subtitle {
-  color: #4b5563;
-  font-size: 0.95rem;
-  margin-top: 0.4rem;
-}
-
-/* CARD FORM */
+.header { text-align: center; }
+.header h2 { font-size: 2rem; font-weight: 800; color: #111827; }
+.subtitle { color: #4b5563; font-size: 0.95rem; margin-top: 0.4rem; }
 .form {
   width: 100%;
   max-width: 520px;
@@ -156,81 +208,27 @@ function volverDashboard() {
   flex-direction: column;
   gap: 1.4rem;
 }
-
-/* GRUPOS */
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-label {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: #1f2937;
-}
-
-/* INPUTS / SELECT */
-input,
-select {
+.form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+label { font-weight: 600; font-size: 0.9rem; color: #1f2937; }
+input, select {
   padding: 0.8rem 1rem;
   border-radius: 0.75rem;
   border: 1px solid #cbd5e1;
   font-size: 0.95rem;
   outline: none;
   background: #f9fafb;
-  transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
 }
-
-input:focus,
-select:focus {
+input:focus, select:focus {
   border-color: #4b6cb7;
   background: #ffffff;
   box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.25);
 }
-
-/* BOTONES */
-.botones {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-top: 0.5rem;
-}
-
-.btn {
-  flex: 1;
-  font-weight: 600;
-  border: none;
-  border-radius: 0.9rem;
-  padding: 0.85rem 1rem;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
-}
-
-/* Publicar */
-.btn.publicar {
-  background: linear-gradient(135deg, #2563eb, #4f46e5);
-  color: #ffffff;
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.35);
-}
-
-.btn.publicar:hover {
-  transform: translateY(-2px);
-  opacity: 0.98;
-}
-
-/* Volver */
-.btn.back {
-  background: #e5e7eb;
-  color: #111827;
-}
-
-.btn.back:hover {
-  transform: translateY(-2px);
-  background: #d1d5db;
-}
-
-/* MENSAJE */
+.radio-group { display: flex; gap: 1rem; }
+.radio-group label { font-weight: normal; font-size: 0.95rem; }
+.botones { display: flex; justify-content: space-between; gap: 1rem; margin-top: 0.5rem; }
+.btn { flex: 1; font-weight: 600; border: none; border-radius: 0.9rem; padding: 0.85rem 1rem; cursor: pointer; }
+.btn.publicar { background: linear-gradient(135deg, #2563eb, #4f46e5); color: #fff; }
+.btn.back { background: #e5e7eb; color: #111827; }
 .mensaje {
   margin-top: 1.25rem;
   font-weight: 600;
@@ -238,6 +236,5 @@ select:focus {
   background: rgba(255, 255, 255, 0.7);
   padding: 0.9rem 1.1rem;
   border-radius: 0.9rem;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
 }
 </style>
