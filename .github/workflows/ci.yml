@@ -12,6 +12,10 @@ on:
       - dev
 
 jobs:
+
+  # ===========================
+  # BACKEND TESTS
+  # ===========================
   backend-tests:
     name: Backend unit tests
     runs-on: ubuntu-latest
@@ -36,33 +40,36 @@ jobs:
 
       - name: Run backend tests
         run: npm test
-        # o npm run test:unit si lo llamas distinto
 
-  # ➕ Preparado para el futuro: tests de frontend
-  # frontend-tests:
-  #   name: Frontend unit tests
-  #   runs-on: ubuntu-latest
-  #
-  #   defaults:
-  #     run:
-  #       working-directory: ./frontend
-  #
-  #   steps:
-  #     - name: Checkout repo
-  #       uses: actions/checkout@v4
-  #
-  #     - name: Setup Node
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 20
-  #         cache: npm
-  #         cache-dependency-path: frontend/package-lock.json
-  #
-  #     - name: Install deps (frontend)
-  #       run: npm ci
-  #
-  #     - name: Run frontend tests
-  #       run: npm test
+
+  # ===========================
+  # FRONTEND TESTS
+  # ===========================
+  frontend-tests:
+    name: Frontend unit tests
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./frontend/frangments-web
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/frangments-web/package-lock.json
+
+      - name: Install deps (frontend)
+        run: npm ci
+
+      - name: Run frontend unit tests
+        run: npm run test:unit
+
 
   # ➕ Preparado para el futuro: tests end-to-end (Selenium)
   # e2e-tests:
