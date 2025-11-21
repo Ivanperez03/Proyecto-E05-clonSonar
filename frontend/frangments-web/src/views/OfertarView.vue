@@ -1,11 +1,11 @@
 <template>
   <div class="ofertar">
     <header class="header">
-      <h2>Publicar una nueva oferta</h2>
-      <p class="subtitle">Crea una oferta y compártela con la comunidad</p>
+      <h2>Publicar un nuevo plan</h2>
+      <p class="subtitle">Crea un plan y se creará automáticamente su grupo asociado</p>
     </header>
 
-    <form class="form" @submit.prevent="crearOferta">
+    <form class="form" @submit.prevent="crearPlan">
       <!-- Plataforma -->
       <div class="form-group">
         <label for="plataforma">Plataforma del plan</label>
@@ -42,43 +42,33 @@
         />
       </div>
 
-      <!-- Elegir entre grupo existente o nuevo -->
+      <!-- Número de personas -->
       <div class="form-group">
-        <label>¿Qué deseas hacer?</label>
-        <div class="radio-group">
-          <label>
-            <input type="radio" value="existente" v-model="opcion" /> Grupo existente
-          </label>
-          <label>
-            <input type="radio" value="nuevo" v-model="opcion" /> Crear nuevo grupo
-          </label>
-        </div>
+        <label for="personas">Número de personas</label>
+        <input
+          type="number"
+          id="personas"
+          v-model.number="form.personas"
+          placeholder="Número de personas que pueden unirse"
+          required
+          min="1"
+        />
       </div>
 
-      <!-- Grupo existente -->
-      <div class="form-group" v-if="opcion === 'existente'">
-        <label>Selecciona un grupo existente</label>
-        <select v-model.number="form.id_grupo">
-          <option disabled value="">Selecciona un grupo</option>
-          <option v-for="g in grupos" :key="g.id_grupo" :value="g.id_grupo">
-            {{ g.nombre }}
-          </option>
-        </select>
-      </div>
-
-      <!-- Nuevo grupo -->
-      <div class="form-group" v-if="opcion === 'nuevo'">
-        <label>Nombre del nuevo grupo</label>
+      <!-- Nombre del grupo (nuevo) -->
+      <div class="form-group">
+        <label>Nombre del grupo asociado</label>
         <input
           type="text"
           v-model="form.nuevo_grupo"
           placeholder="Escribe el nombre del grupo"
+          required
         />
       </div>
 
       <!-- Botones -->
       <div class="botones">
-        <button class="btn publicar" type="submit">Publicar oferta</button>
+        <button class="btn publicar" type="submit">Publicar plan</button>
         <button type="button" class="btn back" @click="volverDashboard">⬅ Volver</button>
       </div>
     </form>
@@ -90,89 +80,67 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { useAccountStore } from "@/stores/cuenta";
 import apiax from "@/apiAxios";
 
 const router = useRouter();
-
-const grupos = ref<Array<{ id_grupo: number; nombre: string }>>([]);
 const plataformas = ref<Array<{ id_plataforma: number; nombre: string }>>([]);
+const mensaje = ref("");
+const account = useAccountStore();
 
 const form = ref({
   plataforma: "" as number | "",
   precio: null as number | null,
   fecha_vencimiento: "",
-  id_grupo: "" as number | "",
+  personas: 1 as number,
   nuevo_grupo: "",
 });
-
-const opcion = ref("existente");
-const mensaje = ref("");
 
 onMounted(async () => {
   try {
     const token = localStorage.getItem("token");
-
-    // Traer grupos
-    const respGrupos = await apiax.get("/grupo/mis-grupos", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    grupos.value = respGrupos.data;
-
     // Traer plataformas
     const respPlataformas = await apiax.get("/plataforma", {
       headers: { Authorization: `Bearer ${token}` },
     });
     plataformas.value = respPlataformas.data;
   } catch (error) {
-    console.error("Error cargando grupos o plataformas:", error);
-    mensaje.value = "❌ Error al cargar los grupos o plataformas";
+    console.error("Error cargando plataformas:", error);
+    mensaje.value = "❌ Error al cargar las plataformas";
   }
 });
 
-async function crearOferta() {
-  if (
-    !form.value.plataforma ||
-    !form.value.precio ||
-    !form.value.fecha_vencimiento ||
-    (opcion.value === "existente" && !form.value.id_grupo) ||
-    (opcion.value === "nuevo" && !form.value.nuevo_grupo)
-  ) {
+async function crearPlan() {
+  if (!form.value.plataforma || !form.value.precio || !form.value.fecha_vencimiento || !form.value.nuevo_grupo || !form.value.personas) {
     mensaje.value = "Por favor completa todos los campos";
     return;
   }
 
   try {
+    // Crear grupo usando Pinia
+    const nuevoGrupo = await account.createGroup(form.value.nuevo_grupo);
+    const id_grupo = nuevoGrupo.id_grupo;
+
     const token = localStorage.getItem("token");
-    let id_grupo_final = form.value.id_grupo;
 
-    // Crear nuevo grupo si se seleccionó esa opción
-    if (opcion.value === "nuevo") {
-      const respNuevoGrupo = await apiax.post(
-        "/grupos",
-        { nombre: form.value.nuevo_grupo },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      id_grupo_final = respNuevoGrupo.data.group.id_grupo;
-    }
-
-    // Publicar oferta
+    // Crear plan asociado al grupo
     await apiax.post(
       "/plan_sub/subscribe",
       {
         id_plataforma: Number(form.value.plataforma),
         precio: form.value.precio,
         fecha_vencimiento: form.value.fecha_vencimiento,
-        id_grupo: Number(id_grupo_final),
+        id_grupo,
+        nmiembros: form.value.personas
       },
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
-    mensaje.value = "✅ Oferta publicada con éxito";
-    form.value = { plataforma: "", precio: null, fecha_vencimiento: "", id_grupo: "", nuevo_grupo: "" };
-    opcion.value = "existente";
+    mensaje.value = "✅ Plan y grupo creado con éxito";
+    form.value = { plataforma: "", precio: null, fecha_vencimiento: "", personas: 1, nuevo_grupo: "" };
   } catch (error: any) {
     console.error(error);
-    mensaje.value = error.response?.data?.message || "❌ Error al publicar la oferta";
+    mensaje.value = error.response?.data?.message || "❌ Error al crear el plan";
   }
 }
 
@@ -223,8 +191,6 @@ input:focus, select:focus {
   background: #ffffff;
   box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.25);
 }
-.radio-group { display: flex; gap: 1rem; }
-.radio-group label { font-weight: normal; font-size: 0.95rem; }
 .botones { display: flex; justify-content: space-between; gap: 1rem; margin-top: 0.5rem; }
 .btn { flex: 1; font-weight: 600; border: none; border-radius: 0.9rem; padding: 0.85rem 1rem; cursor: pointer; }
 .btn.publicar { background: linear-gradient(135deg, #2563eb, #4f46e5); color: #fff; }

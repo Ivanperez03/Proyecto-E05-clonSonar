@@ -6,18 +6,20 @@ export const planSubRepo = {
     id_plataforma, 
     precio, 
     fecha_vencimiento,
+    nmiembros
   }: {
     id_grupo: number;
     id_plataforma: number;
     precio: number;
     fecha_vencimiento: Date;
+    nmiembros: number;
   }) {
     try {
       const { rows } = await db.query(
-        `INSERT INTO plan_sub (id_plataforma, precio_plan, fecha_vencimiento, id_grupo) 
-         VALUES ($1, $2, $3, $4) 
+        `INSERT INTO plan_sub (id_plataforma, precio_plan, fecha_vencimiento, id_grupo, nmiembros) 
+         VALUES ($1, $2, $3, $4, $5) 
          RETURNING *`,
-        [id_plataforma, precio, fecha_vencimiento, id_grupo]
+        [id_plataforma, precio, fecha_vencimiento, id_grupo, nmiembros]
       );
       return rows[0]; 
     } catch (error) {

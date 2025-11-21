@@ -6,35 +6,22 @@ import { userRepo } from "../users/user.repository";
 export const planSubController = {
   async createSubscription(req: Request, res: Response) {
     try {
-      console.log("==== createSubscription ====");
-      console.log("Cuerpo recibido:", req.body);
-
-      const { id_plataforma, precio, fecha_vencimiento, id_grupo } = req.body;
-
+      const { id_plataforma, precio, fecha_vencimiento, id_grupo, nmiembros } = req.body;
+  
       // Validación
-      if (!id_plataforma || !precio || !fecha_vencimiento || !id_grupo) {
-        console.warn("Faltan campos:", { id_plataforma, precio, fecha_vencimiento, id_grupo });
+      if (!id_plataforma || !precio || !fecha_vencimiento || !id_grupo || !nmiembros) {
         return res.status(400).json({ message: "Faltan campos", body: req.body });
       }
-
-      // Comprobar tipos
-      console.log("Tipos recibidos:", {
-        id_plataforma: typeof id_plataforma,
-        precio: typeof precio,
-        fecha_vencimiento: typeof fecha_vencimiento,
-        id_grupo: typeof id_grupo,
-      });
-
-      // Crear suscripción
+  
+      // Crear suscripción con nmiembros
       const subscription = await planSubRepo.createSubscription({
         id_grupo, 
         id_plataforma, 
         precio, 
         fecha_vencimiento,
+        nmiembros
       });
-
-      console.log("Suscripción creada:", subscription);
-
+  
       return res.status(201).json({
         message: "Suscripción creada con éxito",
         subscription,
@@ -44,7 +31,6 @@ export const planSubController = {
       return res.status(500).json({ message: "Error al crear suscripción", error: error.message });
     }
   },
-
   async getActivePlansForPlatform(req: Request, res: Response) {
     try {
       console.log("==== getActivePlansForPlatform ====");
