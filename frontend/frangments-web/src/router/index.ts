@@ -9,6 +9,8 @@ import OfertarView from "@/views/OfertarView.vue";
 import AdminView from "@/views/AdminView.vue";
 import PlataformaPagoView from "@/views/PlataformaPagoView.vue";
 import PlanesPlataformaView from "@/views/PlanesPlataformaView.vue";
+import AlertasView from "@/views/AlertasView.vue";
+import FAQView from "@/views/FAQView.vue";
 import { useAuthStore } from "@/stores/auth";
 
 const router = createRouter({
@@ -23,6 +25,8 @@ const router = createRouter({
     { path: "/ofertar", name: "ofertar", component: OfertarView, meta: { requiresAuth: true } },
     { path: "/admin", name: "admin", component: AdminView, meta: { requiresAuth: true, requiresAdmin: true } },
     { path: "/plataformapago", name: "plataformapago", component: PlataformaPagoView, meta: { requiresAuth: true} },
+    { path: "/alertas", name: "alertas", component: AlertasView, meta: { requiresAuth: true} },
+    { path: "/faq", name: "faq", component: FAQView, meta: {requiresAuth: true} },
     {
       path: "/plataformas/:id_plataforma/:plataforma",
       name: "planes-plataforma",

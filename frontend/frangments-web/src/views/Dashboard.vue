@@ -19,10 +19,51 @@
 
     <!-- DERECHA -->
     <div class="actions">
+      <!-- BOTÓN DE ALERTAS CON BADGE Y POPUP -->
+      <div class="alert-wrapper">
+        <button class="btn small primary alert-btn" @click="toggleAlertas">
+          <svg xmlns="http://www.w3.org/2000/svg"
+              class="icon-bell"
+              viewBox="0 0 24 24"
+              fill="currentColor">
+            <path d="M12 2a7 7 0 00-7 7v4.764l-.894 1.789A1 1 0 005 18h14a1 1 0 00.894-1.447L19 13.764V9a7 7 0 00-7-7zm0 20a3 3 0 002.995-2.824L15 19h-6a3 3 0 002.824 2.995L12 22z"/>
+          </svg>
+
+          <!-- BADGE -->
+          <span v-if="alertasNoVistas > 0" class="alert-badge">
+            {{ alertasNoVistas }}
+          </span>
+        </button>
+
+        <!-- DESPLEGABLE -->
+        <div v-if="showAlertas" class="alert-dropdown animate-dropdown">
+          <h4 class="alert-title">Últimas alertas</h4>
+
+          <div v-if="alertas.length === 0" class="alert-empty">
+            No tienes alertas nuevas.
+          </div>
+
+          <ul class="alert-list">
+            <li
+              v-for="(a, i) in alertas"
+              :key="i"
+              class="alert-item"
+              :class="{ unread: !a.vista }"
+            >
+              {{ a.mensaje }}
+            </li>
+          </ul>
+
+          <button class="alert-see-all" @click="verTodasAlertas">
+            Ver todas mis alertas →
+          </button>
+        </div>
+      </div>
+
       <button class="btn small primary" @click="irCuenta">
         Mi cuenta
       </button>
-      <button class="btn small primary" @click="irAdmin">
+      <button v-if="auth.user.tipo === 'admin'" class="btn small primary" @click="irAdmin">
         Administrador
       </button>
 
@@ -122,6 +163,12 @@
         </div>
       </div>
     </section>
+    <div class="bottom right">
+      <!-- BOTÓN FLOTANTE FAQ -->
+      <button class="btn small primary" @click="irFaq">
+        ❓
+      </button>
+    </div>
   </div>
 </template>
 
@@ -575,6 +622,181 @@ function verPlataforma(id: number) {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: rgba(15, 23, 42, 0.7);
+}
+
+/* ========= ALERTAS (ESTILO DASHBOARD) ========= */
+
+.alert-wrapper {
+  position: relative;
+}
+
+/* ICONO CAMPANA */
+.icon-bell {
+  width: 20px;
+  height: 20px;
+  filter: drop-shadow(0 0 2px rgba(255,255,255,0.4));
+  opacity: 0.9;
+  transition: 0.25s ease;
+}
+
+.alert-btn:hover .icon-bell {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* BOTÓN CONTENEDOR */
+.alert-btn {
+  position: relative;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  padding: 0.45rem 0.7rem;
+  border-radius: 0.9rem;
+  backdrop-filter: blur(12px);
+  cursor: pointer;
+  transition: 0.25s ease;
+}
+
+.alert-btn:hover {
+  border-color: rgba(129, 140, 248, 0.85);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.4);
+}
+
+/* BADGE */
+.alert-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: linear-gradient(135deg, #e11d48, #fb7185);
+  color: white;
+  font-size: 0.7rem;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-weight: 700;
+  box-shadow: 0 0 8px rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.35);
+}
+
+/* DROPDOWN */
+.alert-dropdown {
+  position: absolute;
+  top: 110%;
+  right: 0;
+  width: 260px;
+  background: radial-gradient(circle at top left,
+    rgba(15,23,42,0.95),
+    rgba(15,23,42,0.75)
+  );
+  border: 1px solid rgba(148,163,184,0.35);
+  border-radius: 1.3rem;
+  padding: 1rem;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.45);
+  z-index: 200;
+  backdrop-filter: blur(16px);
+  animation: dropdown 0.25s ease-out;
+}
+
+/* TÍTULO */
+.alert-title {
+  font-size: 1rem;
+  color: #c7d2fe;
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+  text-shadow: 0 0 4px rgba(129,140,248,0.4);
+}
+
+/* LISTA */
+.alert-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+/* ITEM */
+.alert-item {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(148,163,184,0.25);
+  padding: 0.7rem;
+  border-radius: 0.7rem;
+  margin-bottom: 0.45rem;
+  font-size: 0.85rem;
+  transition: 0.25s;
+  color: #f3f4f6;
+}
+
+.alert-item.unread {
+  background: rgba(67,56,202,0.35);
+  border-color: rgba(129,140,248,0.85);
+  font-weight: 600;
+}
+
+.alert-item:hover {
+  background: rgba(99,102,241,0.35);
+  border-color: rgba(129,140,248,0.9);
+}
+
+/* VACÍO */
+.alert-empty {
+  color: #e2e8f0;
+  opacity: 0.8;
+  font-size: 0.88rem;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+/* VER TODAS */
+.alert-see-all {
+  width: 100%;
+  background: rgba(15,23,42,0.5);
+  border: 1px solid rgba(148,163,184,0.35);
+  color: #c7d2fe;
+  font-weight: 700;
+  margin-top: 0.6rem;
+  cursor: pointer;
+  padding: 0.7rem;
+  border-radius: 0.7rem;
+  transition: 0.25s;
+  backdrop-filter: blur(10px);
+}
+
+.alert-see-all:hover {
+  background: rgba(99,102,241,0.35);
+  border-color: rgba(129,140,248,0.85);
+  transform: translateY(-2px);
+}
+
+/* ANIMACIÓN */
+@keyframes dropdown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+.bottom.right {
+  position: fixed;
+  bottom: 20px;   /* distancia desde abajo */
+  right: 20px;    /* distancia desde la derecha */
+  z-index: 999;   /* siempre por encima */
+}
+
+/* Ajustar tamaño del botón */
+.bottom.right .btn.small {
+  padding: 0.4rem 0.6rem;  /* más pequeño */
+  font-size: 1rem;         /* tamaño del símbolo ❓ */
+  border-radius: 50%;      /* redondo */
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 </style>

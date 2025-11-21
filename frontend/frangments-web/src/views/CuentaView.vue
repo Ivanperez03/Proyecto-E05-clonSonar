@@ -50,7 +50,7 @@
         </ul>
 
         <!-- Crear grupo -->
-        <div v-if="!creandoGrupo" class="panel-actions">
+        <!--<div v-if="!creandoGrupo" class="panel-actions">
           <button class="btn icon" @click="creandoGrupo = true">
             + Crear grupo
           </button>
@@ -67,7 +67,7 @@
             <button class="btn success" @click="crearGrupo">Crear</button>
             <button class="btn danger" @click="cancelarCreacion">Cancelar</button>
           </div>
-        </div>
+        </div>-->
       </div>
 
       <!-- SUSCRIPCIONES -->
