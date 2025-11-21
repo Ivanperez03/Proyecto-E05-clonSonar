@@ -1,15 +1,18 @@
 import { Router } from "express";
-import { carteraController } from "./cartera.controller";  
+import { carteraController } from "./cartera.controller";
 
 const router = Router();
 
-// Ruta para obtener el saldo de un usuario
+// Obtener saldo
 router.get("/:id_usuario", carteraController.getSaldo);
 
-// Ruta para actualizar el saldo de un usuario
-router.put("/:id_usuario", carteraController.updateSaldo);
+// Recargar saldo (añadir dinero)
+router.post("/:id_usuario/recargar", carteraController.recargarSaldo);
 
-// Ruta para crear una nueva cartera (si no existe)
+// Gastar saldo (descontar saldo, NO comprar subs)
+router.post("/:id_usuario/gastar", carteraController.gastarSaldo);
+
+// Crear una cartera (saldo: 0)
 router.post("/", carteraController.createCartera);
 
 export default router;
