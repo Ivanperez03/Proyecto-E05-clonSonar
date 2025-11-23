@@ -36,7 +36,7 @@
         </button>
 
         <!-- DESPLEGABLE -->
-        <div v-if="showAlertas" class="alert-dropdown animate-dropdown">
+        <div v-if="showDropdown" class="alert-dropdown animate-dropdown">
           <h4 class="alert-title">Últimas alertas</h4>
 
           <div v-if="alertas.length === 0" class="alert-empty">
@@ -55,7 +55,7 @@
           </ul>
 
           <button class="alert-see-all" @click="verTodasAlertas">
-            Ver todas mis alertas →
+            Ver todas mis alertas
           </button>
         </div>
       </div>
@@ -176,11 +176,15 @@
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
+import { useAlertStore } from "@/stores/alertas";
+import { storeToRefs } from "pinia";
 import apiax from "@/apiAxios";
 
 const router = useRouter();
 const auth = useAuthStore();
 const users = ref<any[]>([]);
+const alertStore = useAlertStore();
+
 const plataformas = ref([
   { id: 1, nombre: "HBO Max", descripcion: "Compartes tu cuenta con 3 personas." },
   { id: 2, nombre: "Spotify", descripcion: "Plan familiar activo." },
@@ -189,11 +193,13 @@ const plataformas = ref([
   { id: 5, nombre: "Canva Pro", descripcion: "aaaa" },
 ]);
 
+const { alertas, alertasNoVistas, showDropdown } = storeToRefs(alertStore);
+
 onMounted(async () => {
   try {
     if (!auth.user) await auth.fetchMe();
     if (!auth.isAuthenticated) return router.push({ name: "login" });
-
+    await alertStore.fetchAlertas();
     const { data } = await apiax.get("/users");
     users.value = data ?? [];
   } catch {
@@ -225,6 +231,21 @@ function irAdmin() {
 function verPlataforma(id: number) {
   router.push({ name: "plataforma-detalle", params: { id } });
 }
+
+function toggleAlertas() {
+  alertStore.toggleDropdown();
+}
+
+async function verTodasAlertas() {
+  await alertStore.marcarTodasComoVistas();  
+  alertStore.showDropdown = false;
+  router.push({ name: "alertas" });
+}
+
+function irFaq() {
+  router.push ({ name: "faq"}); 
+}
+
 </script>
 
 <style>
@@ -244,7 +265,6 @@ function verPlataforma(id: number) {
 
 .dashboard > *:not(.watermark) {
   position: relative;
-  z-index: 2;
 }
 
 /* === TOPBAR === */
@@ -628,6 +648,7 @@ function verPlataforma(id: number) {
 
 .alert-wrapper {
   position: relative;
+  z-index: 9999;
 }
 
 /* ICONO CAMPANA */
@@ -691,7 +712,7 @@ function verPlataforma(id: number) {
   border-radius: 1.3rem;
   padding: 1rem;
   box-shadow: 0 12px 32px rgba(0,0,0,0.45);
-  z-index: 200;
+  z-index: 9999;
   backdrop-filter: blur(16px);
   animation: dropdown 0.25s ease-out;
 }

@@ -1,9 +1,8 @@
 <template>
   <div class="alertas">
-
     <!-- TOP BAR -->
     <header class="topbar animate-fade">
-      <h2 class="title">Mis alertas</h2>
+      <h1 class="page-title">Mis alertas</h1>
 
       <button class="btn small primary" @click="volverDashboard">
         ⬅ Volver
@@ -12,53 +11,89 @@
 
     <!-- LISTA DE ALERTAS -->
     <section class="alertas-list animate-fade-delayed">
-      <div
-        v-for="(alerta, i) in alertas"
-        :key="i"
-        class="alert-card float"
-      >
-        <div class="alert-header">
-          <span class="alert-type" :class="alerta.tipo">{{ formatearTipo(alerta.tipo) }}</span>
-          <span class="alert-date">{{ alerta.fecha }}</span>
+      <!-- ESTADO CARGANDO -->
+      <p v-if="isLoading" class="no-alerts">
+        Cargando alertas...
+      </p>
+
+      <!-- ERROR -->
+      <p v-else-if="error" class="no-alerts">
+        {{ error }}
+      </p>
+
+      <!-- ALERTAS -->
+      <template v-else>
+        <div
+          v-for="alerta in alertas"
+          :key="alerta.id"
+          class="alert-card float"
+        >
+          <div class="alert-header">
+            <span class="alert-type" :class="alerta.tipo">
+              {{ formatearTipo(alerta.tipo) }}
+            </span>
+            <span class="alert-date">
+              {{ formatearFecha(alerta.fecha || alerta.createdAt) }}
+            </span>
+          </div>
+
+          <p class="alert-text">{{ alerta.mensaje }}</p>
         </div>
 
-        <p class="alert-text">{{ alerta.mensaje }}</p>
-      </div>
-
-      <!-- Si no hay alertas -->
-      <p v-if="alertas.length === 0" class="no-alerts">
-        No tienes alertas por ahora
-      </p>
+        <!-- SIN ALERTAS -->
+        <p
+          v-if="alertas.length === 0"
+          class="no-alerts"
+        >
+          No tienes alertas por ahora
+        </p>
+      </template>
     </section>
   </div>
 </template>
 
-<script setup>
-import { ref } from "vue";
+<script setup lang="ts">
+import { onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { useAlertStore } from "@/stores/alertas";
+import { storeToRefs } from "pinia";
 
 const router = useRouter();
+const alertStore = useAlertStore();
+const { alertas, isLoading, error } = storeToRefs(alertStore);
 
-const volverDashboard = () => router.push("/dashboard");
+const volverDashboard = () => {
+  router.push({ name: "dashboard" });
+};
 
-// Ejemplo de alertas (puedes reemplazarlas por tu API)
-const alertas = ref([
-  { tipo: "pago", mensaje: "Tienes un pago pendiente de Netflix.", fecha: "2025-01-02" },
-  { tipo: "grupo", mensaje: "Has sido aceptado en el grupo Disney+.", fecha: "2025-01-03" },
-  { tipo: "suscripcion", mensaje: "Tu suscripción a Max se renueva mañana.", fecha: "2025-01-04" },
-  // Si añades más alertas, también se muestran
-  // Si eliminas las alertas se muestra un mensaje de que no tienes alertas
-]);
+onMounted(async () => {
+  if (alertas.value.length === 0) {
+    await alertStore.fetchAlertas(); // GET /alertas en el backend
+  }
+});
 
-const formatearTipo = (tipo) => {
-  const mapping = {
+const formatearTipo = (tipo?: string) => {
+  const mapping: Record<string, string> = {
     pago: "Pago",
     grupo: "Grupo",
     suscripcion: "Suscripción",
+    sistema: "Sistema",
   };
-  return mapping[tipo] || "Alerta";
+  return mapping[tipo ?? ""] || "Alerta";
+};
+
+const formatearFecha = (fechaRaw?: string) => {
+  if (!fechaRaw) return "";
+  const d = new Date(fechaRaw);
+  if (isNaN(d.getTime())) return fechaRaw;
+  return d.toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 };
 </script>
+
 
 <style scoped>
 .alertas {
@@ -219,5 +254,14 @@ const formatearTipo = (tipo) => {
     transform: translateY(0);
   }
 }
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #0f172a;          /* negro azulado elegante */
+  margin-bottom: 1rem;
+}
+
+
 </style>
 
