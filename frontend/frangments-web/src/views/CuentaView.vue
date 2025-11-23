@@ -48,26 +48,6 @@
             No perteneces a ningún grupo.
           </li>
         </ul>
-
-        <!-- Crear grupo -->
-        <div v-if="!creandoGrupo" class="panel-actions">
-          <button class="btn icon" @click="creandoGrupo = true">
-            + Crear grupo
-          </button>
-        </div>
-
-        <div v-else class="nuevo-grupo">
-          <input
-            v-model="nuevoGrupo"
-            type="text"
-            placeholder="Nuevo grupo"
-            class="input"
-          />
-          <div class="group-actions">
-            <button class="btn success" @click="crearGrupo">Crear</button>
-            <button class="btn danger" @click="cancelarCreacion">Cancelar</button>
-          </div>
-        </div>
       </div>
 
       <!-- SUSCRIPCIONES -->
