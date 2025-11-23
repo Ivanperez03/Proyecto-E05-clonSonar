@@ -1,88 +1,132 @@
-import { mount } from "@vue/test-utils";
+import { mount, flushPromises } from "@vue/test-utils";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import OfertarView from "@/views/OfertarView.vue";
+import apiax from "@/apiAxios";
 
+// ---- router mock ----
 const pushMock = vi.fn();
 
-// router
 vi.mock("vue-router", () => ({
   useRouter: () => ({
     push: pushMock,
   }),
 }));
 
-// auth store (aunque no lo uses apenas, lo importas)
-vi.mock("@/stores/auth", () => ({
-  useAuthStore: () => ({}),
+// ---- account store mock ----
+const createGroupMock = vi.fn();
+
+vi.mock("@/stores/cuenta", () => ({
+  useAccountStore: () => ({
+    createGroup: createGroupMock,
+  }),
+}));
+
+// ---- apiAxios mock ----
+vi.mock("@/apiAxios", () => ({
+  default: {
+    get: vi.fn(),
+    post: vi.fn(),
+  },
 }));
 
 describe("OfertarView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    pushMock.mockReset();
+
+    localStorage.setItem("token", "fake-token");
+
+    (apiax as any).get.mockReset?.();
+    (apiax as any).post.mockReset?.();
+
+    // Por defecto, /plataforma devuelve una lista
+    (apiax as any).get.mockResolvedValue({
+      data: [{ id_plataforma: 1, nombre: "Netflix" }],
+    });
   });
 
-  const fillForm = async (wrapper: any, overrides: Partial<any> = {}) => {
-    const plataforma = overrides.plataforma ?? "Netflix";
-    const precio = overrides.precio ?? "9.99";
-    const fecha = overrides.fecha_vencimiento ?? "2025-12-31";
-    const grupo = overrides.grupo ?? "GrupoTest";
-
-    await wrapper.find("select#plataforma").setValue(plataforma);
-    const inputs = wrapper.findAll("input");
-    // precio
-    await inputs[0].setValue(precio);
-    // fecha
-    await inputs[1].setValue(fecha);
-    // grupo
-    await inputs[2].setValue(grupo);
-  };
-
-  it("muestra el título de publicar oferta", () => {
+  it("muestra el título de publicar oferta", async () => {
     const wrapper = mount(OfertarView);
-    expect(wrapper.text()).toContain("Publicar una nueva oferta");
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Publicar un nuevo plan");
+    expect(wrapper.text()).toContain(
+      "Crea un plan y se creará automáticamente su grupo asociado"
+    );
   });
 
-  it("si faltan campos, muestra mensaje de validación y no limpia el formulario", async () => {
+  it("si faltan campos, muestra mensaje de validación y no llama al backend", async () => {
     const wrapper = mount(OfertarView);
+    await flushPromises(); // espera a que se carguen las plataformas
 
-    // Solo rellenamos plataforma
-    await wrapper.find("select#plataforma").setValue("Netflix");
+    // No rellenamos nada → debería dispararse la validación
+    const form = wrapper.get("form");
+    await form.trigger("submit.prevent");
+    await flushPromises();
 
-    await wrapper.find("form").trigger("submit.prevent");
-
-    expect(wrapper.text()).toContain("Por favor, completa todos los campos.");
-    // El select mantiene el valor
-    expect(
-      (wrapper.find("select#plataforma").element as HTMLSelectElement).value
-    ).toBe("Netflix");
+    expect(wrapper.text()).toContain("Por favor completa todos los campos");
+    expect(createGroupMock).not.toHaveBeenCalled();
+    expect((apiax as any).post).not.toHaveBeenCalled();
   });
 
-  it("con todos los campos, muestra mensaje de éxito y limpia el formulario", async () => {
+  it("con todos los campos, crea grupo, llama al backend y limpia el formulario", async () => {
     const wrapper = mount(OfertarView);
+    await flushPromises();
 
-    await fillForm(wrapper);
+    // Mock de createGroup que devuelve id_grupo
+    createGroupMock.mockResolvedValue({ id_grupo: 123 });
 
-    await wrapper.find("form").trigger("submit.prevent");
+    const selectPlataforma = wrapper.get("#plataforma");
+    const inputPrecio = wrapper.get("#precio");
+    const inputFecha = wrapper.get("#fecha_vencimiento");
+    const inputPersonas = wrapper.get("#personas");
+    const inputGrupo = wrapper.get("input[v-model='form.nuevo_grupo'], input[placeholder='Escribe el nombre del grupo']");
 
-    expect(wrapper.text()).toContain("✅ Oferta publicada con éxito.");
+    // Rellenar campos
+    await selectPlataforma.setValue("1");
+    await inputPrecio.setValue("12.99");
+    await inputFecha.setValue("2025-12-31");
+    await inputPersonas.setValue("4");
+    await inputGrupo.setValue("Grupo Netflix");
 
-    // formulario limpio
-    expect(
-      (wrapper.find("select#plataforma").element as HTMLSelectElement).value
-    ).toBe("");
-    const inputs = wrapper.findAll("input");
-    expect((inputs[0].element as HTMLInputElement).value).toBe("");
-    expect((inputs[1].element as HTMLInputElement).value).toBe("");
-    expect((inputs[2].element as HTMLInputElement).value).toBe("");
+    (apiax as any).post.mockResolvedValue({
+      data: { message: "ok" },
+    });
+
+    const form = wrapper.get("form");
+    await form.trigger("submit.prevent");
+    await flushPromises();
+
+    expect(createGroupMock).toHaveBeenCalledWith("Grupo Netflix");
+    expect((apiax as any).post).toHaveBeenCalledWith(
+      "/plan_sub/subscribe",
+      {
+        id_plataforma: 1,
+        precio: 12.99,
+        fecha_vencimiento: "2025-12-31",
+        id_grupo: 123,
+        nmiembros: 4,
+      },
+      {
+        headers: { Authorization: "Bearer fake-token" },
+      }
+    );
+
+    expect(wrapper.text()).toContain("✅ Plan y grupo creado con éxito");
+
+    // Formulario reseteado
+    expect((selectPlataforma.element as HTMLSelectElement).value).toBe("");
+    expect((inputPrecio.element as HTMLInputElement).value).toBe("");
+    expect((inputFecha.element as HTMLInputElement).value).toBe("");
+    expect((inputPersonas.element as HTMLInputElement).value).toBe("1");
   });
 
   it("botón volver navega a dashboard", async () => {
     const wrapper = mount(OfertarView);
+    await flushPromises();
 
-    const btnVolver = wrapper
-      .findAll("button")
-      .find((b) => b.text().includes("Volver"))!;
-    await btnVolver.trigger("click");
+    const backBtn = wrapper.get(".btn.back");
+    await backBtn.trigger("click");
 
     expect(pushMock).toHaveBeenCalledWith({ name: "dashboard" });
   });

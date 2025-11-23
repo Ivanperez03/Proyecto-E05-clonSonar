@@ -70,28 +70,29 @@ jobs:
       - name: Run frontend unit tests
         run: npm run test:unit
 
+ # ===========================
+  # E2E TESTS (SELENIUM)
+  # ===========================
+  e2e-tests:
+    name: E2E tests (Selenium)
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests]
 
-  # ➕ Preparado para el futuro: tests end-to-end (Selenium)
-  # e2e-tests:
-  #   name: E2E tests (Selenium)
-  #   runs-on: ubuntu-latest
-  #   needs: [backend-tests, frontend-tests]
-  #
-  #   steps:
-  #     - name: Checkout repo
-  #       uses: actions/checkout@v4
-  #
-  #     - name: Setup Node
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 20
-  #
-  #     - name: Install deps (e2e)
-  #       run: |
-  #         cd e2e
-  #         npm ci
-  #
-  #     - name: Run Selenium tests
-  #       run: |
-  #         cd e2e
-  #         npm test      # aquí lanzarías los scripts grabados con Selenium
+    defaults:
+      run:
+        working-directory: ./tests_e2e
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deps (e2e)
+        run: npm ci
+
+      - name: Run Selenium tests
+        run: npm test
