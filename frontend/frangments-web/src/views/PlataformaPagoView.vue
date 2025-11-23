@@ -55,28 +55,51 @@ const auth = useAuthStore();
 const cantidad = ref<number | null>(null);
 const mensaje = ref("");
 
+// Función para añadir saldo
 async function añadirSaldo() {
   if (!cantidad.value || cantidad.value <= 0) {
     mensaje.value = "Introduce una cantidad válida.";
     return;
   }
 
-  try {
-    await apiax.post(`/usuarios/${auth.user}/saldo/añadir`, {
-      cantidad: cantidad.value,
-    });
+  // Obtener ID del usuario desde Pinia
+  const id_usuario = auth.user?.id;
+  if (!id_usuario) {
+    mensaje.value = "Usuario no válido.";
+    return;
+  }
 
-    mensaje.value = "Saldo añadido correctamente ✔";
+  try {
+    const token = localStorage.getItem("token"); // JWT
+
+    const response = await apiax.post(
+      `/cartera/${id_usuario}/recargar`,
+      { cantidad: cantidad.value },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    mensaje.value = response.data.message || "Saldo añadido correctamente ✔";
+
+    // Actualizar saldo en store para reflejarlo en la UI
+    if (auth.user.saldo !== undefined) {
+      auth.user.saldo += cantidad.value;
+    }
+
     cantidad.value = null;
-  } catch (e) {
-    mensaje.value = "Error al añadir saldo.";
+
+  } catch (error: any) {
+    console.error("Error añadiendo saldo:", error);
+    mensaje.value = error.response?.data?.message || "❌ Error al añadir saldo";
   }
 }
 
+// Función para volver a la cuenta
 function volverCuenta() {
   router.push({ name: "cuenta" });
 }
 </script>
+
+
 
 <style scoped>
 /* ===== CONTENEDOR GENERAL ===== */
