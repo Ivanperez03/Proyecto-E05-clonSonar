@@ -3,15 +3,8 @@ const { Builder, By, Key } = require('selenium-webdriver')
 const firefox = require('selenium-webdriver/firefox')
 const assert = require('assert')
 
-// En CI (GitHub Actions) se ejecutan los tests.
-// En local (CI !== 'true') se marcan como skipped y no tocan Firefox.
-const isCI = process.env.CI === 'true'
-const describeOrSkip = isCI ? describe : describe.skip
-
-describeOrSkip('loginbuscarunirmesuscripcion', function() {
-  this.timeout(60000) // 60s por si el arranque va un poco lento en el runner
-
-  /** @type {import('selenium-webdriver').WebDriver | undefined} */
+describe('loginbuscarunirmesuscripcion', function() {
+  this.timeout(60000) // 60s por si tarda un poco en CI
   let driver
   let vars
 
@@ -29,7 +22,6 @@ describeOrSkip('loginbuscarunirmesuscripcion', function() {
   afterEach(async function() {
     if (driver) {
       await driver.quit()
-      driver = undefined
     }
   })
 
@@ -42,14 +34,12 @@ describeOrSkip('loginbuscarunirmesuscripcion', function() {
     await driver.findElement(By.css('label:nth-child(1) > input')).sendKeys('pedrito@gmail.com')
     await driver.findElement(By.css('label:nth-child(2) > input')).sendKeys('Pedrito')
     await driver.findElement(By.css('label:nth-child(2) > input')).sendKeys(Key.ENTER)
-
     await driver.findElement(By.css('.card:nth-child(1) .btn')).click()
     await driver.findElement(By.css('.plataforma-card:nth-child(1) > .btn')).click()
-
-    // Plan 3 -> ya es miembro
     await driver.findElement(By.css('.card-plan:nth-child(3) .btn-glossy')).click()
-    let alertText = await driver.switchTo().alert().getText()
-    assert.strictEqual(alertText, 'Ya eres miembro de este grupo')
+
+    const text = await driver.switchTo().alert().getText()
+    assert(text === 'Ya eres miembro de este grupo')
     await driver.switchTo().alert().accept()
   })
 })

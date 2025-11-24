@@ -70,7 +70,7 @@ jobs:
       - name: Run frontend unit tests
         run: npm run test:unit
 
-  # ===========================
+ # ===========================
   # E2E TESTS (SELENIUM)
   # ===========================
   e2e-tests:
@@ -87,32 +87,31 @@ jobs:
         with:
           node-version: 20
 
-      # Instalar Firefox y geckodriver en el runner
-      - name: Install Firefox + geckodriver
+      # Instalar solo Firefox (geckodriver ya lo aporta el paquete npm "geckodriver")
+      - name: Install Firefox
         run: |
           sudo apt-get update
-          sudo apt-get install -y firefox geckodriver
+          sudo apt-get install -y firefox
           firefox --version
-          geckodriver --version
 
       # --- Levantar backend ---
       - name: Install backend deps
         working-directory: ./backend
-        run: npm install
+        run: npm ci
 
       - name: Start backend
         working-directory: ./backend
-        run: npm run dev 
-        # o npm start &  según tu script
+        run: npm run dev &
+        # o npm start & según tu script
 
       # --- Levantar frontend (Vite, etc.) ---
       - name: Install frontend deps
         working-directory: ./frontend/frangments-web
-        run: npm install
+        run: npm ci
 
       - name: Start frontend
         working-directory: ./frontend/frangments-web
-        run: npm run dev 
+        run: npm run dev -- --host 0.0.0.0 --port 5173 &
 
       # Esperar a que el frontend responda en localhost:5173
       - name: Wait for app to be ready
