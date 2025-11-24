@@ -98,21 +98,21 @@ jobs:
       # --- Levantar backend ---
       - name: Install backend deps
         working-directory: ./backend
-        run: npm ci
+        run: npm install
 
       - name: Start backend
         working-directory: ./backend
-        run: npm run dev &
+        run: npm run dev 
         # o npm start &  según tu script
 
       # --- Levantar frontend (Vite, etc.) ---
       - name: Install frontend deps
         working-directory: ./frontend/frangments-web
-        run: npm ci
+        run: npm install
 
       - name: Start frontend
         working-directory: ./frontend/frangments-web
-        run: npm run dev -- --host 0.0.0.0 --port 5173 &
+        run: npm run dev 
 
       # Esperar a que el frontend responda en localhost:5173
       - name: Wait for app to be ready
