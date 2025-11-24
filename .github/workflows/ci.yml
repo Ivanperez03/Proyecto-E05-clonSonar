@@ -87,12 +87,13 @@ jobs:
         with:
           node-version: 20
 
-      # Instalar Firefox (en noble no existe firefox-esr)
-      - name: Install Firefox
+      # Instalar Firefox y geckodriver en el runner
+      - name: Install Firefox + geckodriver
         run: |
           sudo apt-get update
-          sudo apt-get install -y firefox
+          sudo apt-get install -y firefox geckodriver
           firefox --version
+          geckodriver --version
 
       # --- Levantar backend ---
       - name: Install backend deps
@@ -102,7 +103,7 @@ jobs:
       - name: Start backend
         working-directory: ./backend
         run: npm run dev &
-        # o npm start & según tu package.json
+        # o npm start &  según tu script
 
       # --- Levantar frontend (Vite, etc.) ---
       - name: Install frontend deps
@@ -112,7 +113,6 @@ jobs:
       - name: Start frontend
         working-directory: ./frontend/frangments-web
         run: npm run dev -- --host 0.0.0.0 --port 5173 &
-        # ajusta comando si tu script es otro
 
       # Esperar a que el frontend responda en localhost:5173
       - name: Wait for app to be ready

@@ -3,13 +3,13 @@ const { Builder, By, Key } = require('selenium-webdriver')
 const firefox = require('selenium-webdriver/firefox')
 const assert = require('assert')
 
-// Solo ejecutar los e2e cuando CI=true (GitHub Actions)
-// En local se hará describe.skip y no intentará arrancar Firefox
+// En CI (GitHub Actions) se ejecutan los tests.
+// En local (CI !== 'true') se marcan como skipped y no tocan Firefox.
 const isCI = process.env.CI === 'true'
 const describeOrSkip = isCI ? describe : describe.skip
 
 describeOrSkip('loginbuscarunirmesuscripcion', function() {
-  this.timeout(30000)
+  this.timeout(60000) // 60s por si el arranque va un poco lento en el runner
 
   /** @type {import('selenium-webdriver').WebDriver | undefined} */
   let driver
@@ -45,12 +45,11 @@ describeOrSkip('loginbuscarunirmesuscripcion', function() {
 
     await driver.findElement(By.css('.card:nth-child(1) .btn')).click()
     await driver.findElement(By.css('.plataforma-card:nth-child(1) > .btn')).click()
-    await driver.findElement(By.css('.card-plan:nth-child(3) .btn-glossy')).click()
 
-    // Primer alert
+    // Plan 3 -> ya es miembro
+    await driver.findElement(By.css('.card-plan:nth-child(3) .btn-glossy')).click()
     let alertText = await driver.switchTo().alert().getText()
     assert.strictEqual(alertText, 'Ya eres miembro de este grupo')
     await driver.switchTo().alert().accept()
   })
 })
-
