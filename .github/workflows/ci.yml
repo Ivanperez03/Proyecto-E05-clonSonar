@@ -131,7 +131,7 @@ jobs:
       # --- Tests E2E ---
       - name: Install deps (e2e)
         working-directory: ./tests_e2e
-        run: npm ci
+        run: npm install
 
       - name: Run Selenium tests
         working-directory: ./tests_e2e
