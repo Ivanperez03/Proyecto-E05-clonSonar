@@ -128,6 +128,9 @@ jobs:
         working-directory: ./frontend/frangments-web
         run: |
           npm install
+          # Creamos un archivo .env al vuelo para decirle dónde está el backend
+          # Esto es vital si tu frontend usa Vite y espera VITE_API_URL
+          echo "VITE_API_URL=http://127.0.0.1:3000" > .env
           npm run dev -- --host &
 
       # 3. ESPERAR AL FRONTEND
