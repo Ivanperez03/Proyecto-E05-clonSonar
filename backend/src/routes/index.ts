@@ -5,16 +5,17 @@ import planSubRouter from "../modules/plan_sub/plan_sub.router";
 import grupoRouter from "../modules/grupo/grupo.router";
 import miembroGrupoRouter from "../modules/miembro_grupo/miembro_grupo.router";
 import carteraRouter from "../modules/cartera/cartera.router";
-import adminRouter from "../modules/adminfuncs/admin.router"; // 👈 nuevo
+import adminRouter from "../modules/adminfuncs/admin.router"; 
 import { authMiddleware } from "../middleware/auth.middleware";
 import { userController } from "../modules/users/user.controller";
+import alertasRouter from "../modules/alertas/alertas.router"
 
 const router = Router();
 
 // === USERS ===
 router.use("/users", userRouter);
 router.get("/me", authMiddleware, userController.me);
-router.get("/user/data", authMiddleware, userController.getUserData); // usado en panel de cuenta no tocar gracias
+router.get("/user/data", authMiddleware, userController.getUserData); 
 
 // === PLATAFORMA ===
 router.use("/plataforma", plataformaRouter);
@@ -33,5 +34,7 @@ router.use("/cartera", carteraRouter);
 
 // === ADMIN ===
 router.use("/admin", adminRouter); 
+
+router.use("/alertas", alertasRouter);
 
 export default router;

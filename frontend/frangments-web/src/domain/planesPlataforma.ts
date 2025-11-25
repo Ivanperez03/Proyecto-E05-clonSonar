@@ -4,4 +4,5 @@ export interface PlanPlataformaDTO {
   fecha_vencimiento: string;
   id_grupo: number;
   nombre_grupo: string;
+  nmiembros: number; 
 }

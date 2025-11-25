@@ -728,12 +728,35 @@ function irFaq() {
 
 /* LISTA */
 .alert-list {
-  list-style: none;
+  max-height: 180px;          /* límite de altura para que pueda aparecer scroll */
+  overflow-y: auto;           /* activa el scroll vertical */
   margin: 0;
   padding: 0;
-  max-height: 180px;
-  overflow-y: auto;
+  list-style: none;
+
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.6) transparent;
 }
+
+/* WebKit (Chrome, Edge, etc.) */
+.alert-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.alert-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.alert-list::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.7);
+  border-radius: 999px;
+}
+
+.alert-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(129, 140, 248, 0.9);
+}
+
 
 /* ITEM */
 .alert-item {

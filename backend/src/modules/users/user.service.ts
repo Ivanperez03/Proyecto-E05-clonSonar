@@ -7,7 +7,7 @@ export const userService = {
     email: string; 
     telefono: string; 
     password: string; 
-    admin?: boolean; // ✅ añadimos opcional admin
+    admin?: boolean; 
   }) {
     if (await userRepo.existsByEmailOrPhone(dto.email, dto.telefono))
       throw new Error('Email o teléfono ya existe');

@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { planSubRepo } from "../plan_sub/plan_sub.repositoy";  
 import { miembroGrupoRepo } from "../miembro_grupo/miembro_grupo.repository";
 import { userRepo } from "../users/user.repository";
+import { grupoRepo } from "../grupo/grupo.repository";
+import { createAlerta } from "../alertas/alertas.repository";
 
 export const planSubController = {
   async createSubscription(req: Request, res: Response) {
@@ -31,74 +33,87 @@ export const planSubController = {
       return res.status(500).json({ message: "Error al crear suscripción", error: error.message });
     }
   },
-  async getActivePlansForPlatform(req: Request, res: Response) {
-    try {
-      console.log("==== getActivePlansForPlatform ====");
-      console.log("Params recibidos:", req.params);
-
-      const id_plataforma = Number(req.params.id_plataforma);
-      if (Number.isNaN(id_plataforma)) {
-        console.warn("id_plataforma inválido:", req.params.id_plataforma);
-        return res.status(400).json({ message: "id_plataforma inválido" });
-      }
-
-      const planes = await planSubRepo.getActivePlansByPlatformId(id_plataforma);
-      console.log("Planes encontrados:", planes);
-      return res.json(planes);
-    } catch (error: any) {
-      console.error("Error obteniendo planes activos:", error);
-      return res.status(500).json({ message: "Error al obtener planes activos", error: error.message });
+async getActivePlansForPlatform(req: Request, res: Response) {
+  try {
+    const id_plataforma = Number(req.params.id_plataforma);
+    if (Number.isNaN(id_plataforma)) {
+      return res.status(400).json({ message: "id_plataforma inválido" });
     }
-  },
+
+    // ⬇️ sacar usuario desde el JWT
+    const jwtPayload = (req as any).jwt as { email: string };
+    if (!jwtPayload?.email) {
+      return res.status(401).json({ message: "No autorizado" });
+    }
+
+    const user = await userRepo.findByEmail(jwtPayload.email);
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    const planes = await planSubRepo.getActivePlansByPlatformId(
+      id_plataforma,
+      user.id_usuario
+    );
+
+    return res.json(planes);
+  } catch (error: any) {
+    console.error("Error obteniendo planes activos:", error);
+    return res.status(500).json({
+      message: "Error al obtener planes activos",
+      error: error.message,
+    });
+  }
+},
 
   async joinPlanGroup(req: Request, res: Response) {
     try {
-      console.log("==== joinPlanGroup ====");
-      console.log("Params recibidos:", req.params);
-
       const id_plan = Number(req.params.id_plan);
       if (Number.isNaN(id_plan)) {
-        console.warn("id_plan inválido:", req.params.id_plan);
         return res.status(400).json({ message: "id_plan inválido" });
       }
-
       const jwtPayload = (req as any).jwt as { email: string };
       if (!jwtPayload?.email) {
-        console.warn("JWT no tiene email:", jwtPayload);
         return res.status(401).json({ message: "No autorizado" });
       }
-
       const user = await userRepo.findByEmail(jwtPayload.email);
       if (!user) {
-        console.warn("Usuario no encontrado:", jwtPayload.email);
         return res.status(404).json({ message: "Usuario no encontrado" });
       }
-
       const id_usuario = user.id_usuario;
-
       const plan = await planSubRepo.getPlanById(id_plan);
       if (!plan) {
-        console.warn("Plan no encontrado:", id_plan);
         return res.status(404).json({ message: "Plan no encontrado" });
       }
-
       if (plan.estado_grupo !== "abierto") {
-        console.warn("Grupo cerrado:", plan.estado_grupo);
         return res.status(400).json({ message: "El grupo de este plan no está abierto" });
       }
-
       const yaMiembro = await miembroGrupoRepo.isUserInGroup(plan.id_grupo, id_usuario);
       if (yaMiembro) {
-        console.warn("Usuario ya miembro:", id_usuario, plan.id_grupo);
         return res.status(400).json({ message: "Ya eres miembro de este grupo" });
       }
-
       await miembroGrupoRepo.addMemberToGroup({ id_grupo: plan.id_grupo, id_usuario });
 
-      console.log("Usuario añadido al grupo:", { id_usuario, id_grupo: plan.id_grupo });
+      // Lógica para alertas
+      const grupo = await grupoRepo.findById(plan.id_grupo);
+      const nombreGrupo = grupo?.nombre ?? `Grupo #${plan.id_grupo}`;
+
+      await createAlerta({
+        id_usuario,
+        tipo: "ALTA_GRUPO",
+        titulo: "Te has unido a un grupo",
+        mensaje: `Te has unido correctamente al grupo "${nombreGrupo}".`,
+        id_grupo: plan.id_grupo,
+        id_plan: plan.id_plan,          
+        metadata: {
+          plataforma: plan.nombre_plataforma ?? null,  
+        },
+      });
+
+      // aqui se podria añadir que le llegue una alerta tmb al jefe del grupo
+      
       return res.status(201).json({ message: "Te has unido al grupo correctamente", id_grupo: plan.id_grupo });
     } catch (error: any) {
-      console.error("Error al unirse al grupo:", error);
       return res.status(500).json({ message: "Error al unirse al grupo", error: error.message });
     }
   },
