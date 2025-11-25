@@ -137,7 +137,7 @@ jobs:
           # 3. REGISTRAR USUARIO (Pedrito)
           curl --fail -s -X POST http://localhost:3000/api/users \
             -H "Content-Type: application/json" \
-            -d '{"nombre": "Pedrito", "email": "pedrito@gmail.com", "telefono": "666777888", "password": "Pedrito", "tipo": "normal"}'
+            -d '{"nombre": "Pedrito", "mail": "pedrito@gmail.com", "telefono": "666777888", "constrasena": "Pedrito", "tipo": "normal"}'
             
         env:
           PORT: 3000
