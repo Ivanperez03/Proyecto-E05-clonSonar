@@ -103,21 +103,24 @@ jobs:
         working-directory: ./backend
         run: |
           npm install
-
-          npm run dev &
-          # --------------------------------------
-
-          # Esperamos a que el puerto 3000 responda
-          npx wait-on http://localhost:3000 --timeout 30000
           
-          # REGISTRO VIA CURL (CORREGIDO A /api/users)
-          curl -X POST http://localhost:3000/api/users \
+          # Arrancamos backend en modo dev (segundo plano)
+          npm run dev &
+
+          # --- CAMBIO CLAVE AQUÍ ---
+          # 1. Esperamos 5 segundos ciegamente para dar tiempo a ts-node a iniciar
+          sleep 5
+          # 2. Usamos tcp:3000 en vez de http://localhost:3000
+          # 3. Usamos 127.0.0.1 explícitamente para evitar problemas de IPv6
+          npx wait-on tcp:127.0.0.1:3000 --timeout 60000
+          
+          # REGISTRO VIA CURL (Usando 127.0.0.1 y /api/users)
+          curl -X POST http://127.0.0.1:3000/api/users \
             -H "Content-Type: application/json" \
             -d '{"nombre": "Pedrito", "email": "pedrito@gmail.com", "telefono": "666777888", "password": "Pedrito", "admin": false}'
             
         env:
           PORT: 3000
-          # Apuntamos a la base de datos temporal de GitHub
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fragments
 
       # 2. ARRANCAR FRONTEND
@@ -125,12 +128,12 @@ jobs:
         working-directory: ./frontend/frangments-web
         run: |
           npm install
-          # Vite no necesita build para desarrollo, 'dev' compila en memoria
           npm run dev &
 
       # 3. ESPERAR AL FRONTEND
       - name: Wait for Frontend
-        run: npx wait-on http://localhost:5173 --timeout 60000
+        # También cambiamos a 127.0.0.1 aquí por seguridad
+        run: npx wait-on http://127.0.0.1:5173 --timeout 60000
 
       # 4. PREPARAR Y EJECUTAR SELENIUM
       - name: Install E2E dependencies
@@ -141,4 +144,5 @@ jobs:
         working-directory: ./tests_e2e
         env:
           CI: true
+        # Si selenium falla al conectar, asegúrate de que en tu JS también usas localhost o 127.0.0.1
         run: npx mocha "*.js" --timeout 60000
