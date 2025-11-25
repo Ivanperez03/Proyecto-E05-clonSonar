@@ -128,12 +128,12 @@ jobs:
         working-directory: ./frontend/frangments-web
         run: |
           npm install
-          npm run dev &
+          npm run dev -- --host &
 
       # 3. ESPERAR AL FRONTEND
       - name: Wait for Frontend
         # También cambiamos a 127.0.0.1 aquí por seguridad
-        run: npx wait-on http://127.0.0.1:5173 --timeout 60000
+        run: npx wait-on tcp:127.0.0.1:5173 --timeout 60000
 
       # 4. PREPARAR Y EJECUTAR SELENIUM
       - name: Install E2E dependencies
