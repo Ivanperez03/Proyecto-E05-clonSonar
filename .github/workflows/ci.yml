@@ -136,7 +136,7 @@ jobs:
           # Esto es vital para que coincida con la configuración de cookies/CORS
           curl --fail -v -X POST http://localhost:3000/api/users \
             -H "Content-Type: application/json" \
-            -d '{"nombre": "Pedrito", "mail": "pedrito@gmail.com", "telefono": "666777888", "password": "Pedrito", "tipo": "normal"}'
+            -d '{"nombre": "Pedrito", "email": "pedrito@gmail.com", "telefono": "666777888", "password": "Pedrito", "tipo": "normal"}'
             
           echo ">>> CONTENIDO DE LA TABLA USUARIO:"
           export PGPASSWORD=postgres
@@ -145,6 +145,7 @@ jobs:
         env:
           PORT: 3000
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fragments
+          JWT_SECRET: "secreto_super_seguro_para_tests_en_ci"
 
       # --- B. ARRANCAR FRONTEND ---
       - name: Install and Start Frontend
