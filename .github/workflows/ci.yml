@@ -72,7 +72,6 @@ jobs:
   e2e-tests:
     name: E2E Selenium Tests
     runs-on: ubuntu-latest
-    # Esperamos a que los unitarios pasen antes de lanzar Selenium
     needs: [backend-tests, frontend-tests]
 
     services:
@@ -125,20 +124,17 @@ jobs:
           "
 
           # ==========================================================
-          # 🕵️ INYECCIÓN DE ESPÍA: VER QUÉ RECIBE EL LOGIN REALMENTE
-          # Buscamos la línea "async login" e inyectamos un console.log justo debajo.
-          # Esto nos mostrará en el log de GitHub EXACTAMENTE qué envía el Frontend.
+          # 🕵️ ESPÍA GLOBAL: MODIFICAMOS APP.TS
+          # Inyectamos un console.log justo antes de las rutas para ver TODO lo que llega
           # ==========================================================
-          
-          # Ajusta la ruta si tu archivo no está en 'src/modules/users/user.controller.ts'
-          sed -i 's/async login(req: Request, res: Response) {/async login(req: Request, res: Response) { console.log(">>> DEBUG LOGIN BODY:", JSON.stringify(req.body));/g' src/modules/users/user.controller.ts || echo "⚠️ NO SE PUDO INYECTAR EL LOG"
+          sed -i 's/app.use("\/api", routes);/app.use((req, res, next) => { console.log(">>> REQUEST BODY:", JSON.stringify(req.body)); next(); }); app.use("\/api", routes);/' src/app.ts || echo "⚠️ FALLO AL INYECTAR EN APP.TS"
 
           # 2. ARRANCAR
           npm run dev &
           sleep 10
           npx wait-on tcp:3000 --timeout 60000
           
-          # 3. REGISTRAR USUARIO
+          # 3. REGISTRAR USUARIO (Pedrito)
           curl --fail -s -X POST http://localhost:3000/api/users \
             -H "Content-Type: application/json" \
             -d '{"nombre": "Pedrito", "email": "pedrito@gmail.com", "telefono": "666777888", "password": "Pedrito", "tipo": "normal"}'
@@ -153,12 +149,7 @@ jobs:
         working-directory: ./frontend/frangments-web
         run: |
           npm install
-          
-          # Configuración CLAVE: Forzamos a Vite a saber que la API está en localhost:3000
           echo "VITE_API_URL=http://localhost:3000" > .env
-          
-          # Arrancamos exponiendo host (--host) para que GitHub Actions no bloquee la red,
-          # pero internamente seguiremos accediendo como localhost.
           npm run dev -- --host & 
 
       # --- C. ESPERAR AL FRONTEND ---
@@ -174,5 +165,4 @@ jobs:
         working-directory: ./tests_e2e
         env:
           CI: true
-        # Asegúrate de que tu .js hace driver.get('http://localhost:5173')
         run: npx mocha "*.js" --timeout 60000
