@@ -32,11 +32,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-          cache-dependency-path: backend/package-lock.json
-
+          
       - name: Install deps (backend)
-        run: npm ci
+        run: npm install
 
       - name: Run backend tests
         run: npm test
@@ -61,16 +59,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-          cache-dependency-path: frontend/frangments-web/package-lock.json
 
       - name: Install deps (frontend)
-        run: npm ci
+        run: npm install
 
       - name: Run frontend unit tests
         run: npm run test:unit
 
-# ===========================
+  # ===========================
   # E2E TESTS (SELENIUM)
   # ===========================
   e2e-tests:
@@ -108,7 +104,11 @@ jobs:
         run: |
           npm install
           
-          # Arrancamos backend en segundo plano
+          # --- IMPORTANTE: Compilamos TS a JS ---
+          npm run build
+          # --------------------------------------
+
+          # Arrancamos backend (ahora sí existe dist/server.js)
           npm start &
 
           # Esperamos a que el puerto 3000 responda
@@ -121,6 +121,7 @@ jobs:
             
         env:
           PORT: 3000
+          # Apuntamos a la base de datos temporal de GitHub
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fragments
 
       # 2. ARRANCAR FRONTEND
@@ -128,6 +129,7 @@ jobs:
         working-directory: ./frontend/frangments-web
         run: |
           npm install
+          # Vite no necesita build para desarrollo, 'dev' compila en memoria
           npm run dev &
 
       # 3. ESPERAR AL FRONTEND
