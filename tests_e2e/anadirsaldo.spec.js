@@ -4,13 +4,13 @@ const firefox = require('selenium-webdriver/firefox')
 const assert = require('assert')
 
 describe('anadirsaldo', function() {
-  this.timeout(60000) // 60 segundos totales para el test
+  this.timeout(60000)
   let driver
   let vars
 
   beforeEach(async function() {
     const options = new firefox.Options()
-      .addArguments('--headless')
+      .addArguments('--headless') // Importante para CI
       .addArguments('--width=1920')
       .addArguments('--height=1080');
 
@@ -28,16 +28,15 @@ describe('anadirsaldo', function() {
   })
 
   it('anadirsaldo', async function() {
-    // 1. Usamos 127.0.0.1 para asegurar conexión en CI
-    await driver.get("http://127.0.0.1:5173/")
+    // CORRECCIÓN: Usamos localhost para coincidir con el CORS de tu backend
+    await driver.get("http://localhost:5173/")
     
-    // --- LOGIN ---
-    // Esperamos a que cargue el formulario
+    // Esperamos a que cargue el login
     await driver.wait(until.elementLocated(By.css(".ghost")), 10000);
     
+    // LOGIN
     await driver.findElement(By.css(".ghost")).click()
     
-    // Rellenamos formulario
     await driver.wait(until.elementLocated(By.css("label:nth-child(1) > input")), 5000);
     await driver.findElement(By.css("label:nth-child(1) > input")).click()
     await driver.findElement(By.css("label:nth-child(1) > input")).sendKeys("pedrito@gmail.com")
@@ -45,43 +44,18 @@ describe('anadirsaldo', function() {
     await driver.findElement(By.css("label:nth-child(2) > input")).click()
     await driver.findElement(By.css("label:nth-child(2) > input")).sendKeys("Pedrito")
     
-    // Click en botón entrar
     await driver.findElement(By.css("button")).click()
 
-    // --- DEBUGGING SI FALLA ---
-    try {
-        // Intentamos esperar al elemento de éxito
-        const botonAcciones = await driver.wait(
-            until.elementLocated(By.css(".actions > .small")), 
-            15000 // Le damos 15 segundos
-        );
-        await driver.wait(until.elementIsVisible(botonAcciones), 5000);
-        await botonAcciones.click();
-        
-    } catch (error) {
-        // !!! AQUÍ ESTÁ LA MAGIA !!!
-        // Si falla, imprimimos qué está viendo el navegador
-        console.log("!!! EL LOGIN FALLÓ O TARDÓ DEMASIADO !!!");
-        
-        // 1. Miramos si hay alertas (popups) de error
-        try {
-            let alert = await driver.switchTo().alert();
-            console.log("ALERTA EN PANTALLA: ", await alert.getText());
-            await alert.accept();
-        } catch (e) {
-            console.log("No había alertas en pantalla.");
-        }
+    // Esperamos a entrar (Dashboard)
+    const botonAcciones = await driver.wait(
+        until.elementLocated(By.css(".actions > .small")), 
+        20000 // Damos 20s por si el CI va lento
+    );
+    await driver.wait(until.elementIsVisible(botonAcciones), 10000);
+    
+    await botonAcciones.click()
 
-        // 2. Imprimimos el código de la página para ver si hay mensajes de error en rojo
-        const pageSource = await driver.getPageSource();
-        console.log("--- CÓDIGO HTML DE LA PÁGINA ACTUAL ---");
-        console.log(pageSource); // Esto saldrá en el log de GitHub
-        console.log("---------------------------------------");
-        
-        throw error; // Volvemos a lanzar el error para que el test falle oficialmente
-    }
-
-    // --- RESTO DEL TEST (Solo se ejecuta si el login va bien) ---
+    // RESTO DEL TEST
     const saldo = await driver.wait(until.elementLocated(By.css(".saldo")), 5000);
     await saldo.click()
     

@@ -104,18 +104,16 @@ jobs:
         run: |
           npm install
           
-          # Arrancamos backend en modo dev (segundo plano)
+          # Arrancamos backend (escucha en localhost:3000)
           npm run dev &
 
-          # --- CAMBIO CLAVE AQUÍ ---
-          # 1. Esperamos 5 segundos ciegamente para dar tiempo a ts-node a iniciar
+          # TRUCO: Esperamos 5s y luego chequeamos TCP en 127.0.0.1
+          # Esto evita el bug de "localhost timeout" de wait-on
           sleep 5
-          # 2. Usamos tcp:3000 en vez de http://localhost:3000
-          # 3. Usamos 127.0.0.1 explícitamente para evitar problemas de IPv6
           npx wait-on tcp:127.0.0.1:3000 --timeout 60000
           
-          # REGISTRO VIA CURL (Usando 127.0.0.1 y /api/users)
-          curl -X POST http://127.0.0.1:3000/api/users \
+          # REGISTRO VIA CURL (Usamos localhost para que coincida también)
+          curl -X POST http://localhost:3000/api/users \
             -H "Content-Type: application/json" \
             -d '{"nombre": "Pedrito", "email": "pedrito@gmail.com", "telefono": "666777888", "password": "Pedrito", "admin": false}'
             
@@ -128,14 +126,12 @@ jobs:
         working-directory: ./frontend/frangments-web
         run: |
           npm install
-          # Creamos un archivo .env al vuelo para decirle dónde está el backend
-          # Esto es vital si tu frontend usa Vite y espera VITE_API_URL
-          echo "VITE_API_URL=http://127.0.0.1:3000" > .env
-          npm run dev -- --host &
+          # Vite --host expone la IP, pero el test usará localhost
+          npm run dev -- --host & 
 
       # 3. ESPERAR AL FRONTEND
       - name: Wait for Frontend
-        # También cambiamos a 127.0.0.1 aquí por seguridad
+        # Chequeamos que el puerto TCP esté abierto
         run: npx wait-on tcp:127.0.0.1:5173 --timeout 60000
 
       # 4. PREPARAR Y EJECUTAR SELENIUM
@@ -147,5 +143,5 @@ jobs:
         working-directory: ./tests_e2e
         env:
           CI: true
-        # Si selenium falla al conectar, asegúrate de que en tu JS también usas localhost o 127.0.0.1
+        # El test JS ahora usa "http://localhost:5173"
         run: npx mocha "*.js" --timeout 60000
