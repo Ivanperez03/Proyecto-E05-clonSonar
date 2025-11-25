@@ -104,12 +104,8 @@ jobs:
         run: |
           npm install
           
-          # --- IMPORTANTE: Compilamos TS a JS ---
-          npm run build
+          npm run dev
           # --------------------------------------
-
-          # Arrancamos backend (ahora sí existe dist/server.js)
-          npm start &
 
           # Esperamos a que el puerto 3000 responda
           npx wait-on http://localhost:3000 --timeout 30000
