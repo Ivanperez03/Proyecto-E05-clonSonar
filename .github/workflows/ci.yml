@@ -103,8 +103,8 @@ jobs:
         working-directory: ./backend
         run: |
           npm install
-          
-          npm run dev
+
+          npm run dev &
           # --------------------------------------
 
           # Esperamos a que el puerto 3000 responda
