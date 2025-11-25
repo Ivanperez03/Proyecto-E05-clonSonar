@@ -138,6 +138,10 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{"nombre": "Pedrito", "email": "pedrito@gmail.com", "telefono": "666777888", "password": "Pedrito", "tipo": "normal"}'
             
+          echo ">>> CONTENIDO DE LA TABLA USUARIO:"
+          export PGPASSWORD=postgres
+          psql -h localhost -U postgres -d fragments -c "SELECT * FROM usuario;"
+
         env:
           PORT: 3000
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fragments

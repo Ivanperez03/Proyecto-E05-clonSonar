@@ -23,60 +23,54 @@ describe('anadirsaldo', function() {
   })
 
   it('anadirsaldo', async function() {
-    // 1. Ir a la web
+    // 1. Navegar
     await driver.get("http://localhost:5173/")
     
-    // 2. Rellenar Login
+    // 2. Abrir Login
     await driver.wait(until.elementLocated(By.css(".ghost")), 10000);
     await driver.findElement(By.css(".ghost")).click()
     
+    // 3. Escribir Email (con pausa para que Vue reaccione)
     await driver.wait(until.elementLocated(By.css("label:nth-child(1) > input")), 5000);
-    await driver.findElement(By.css("label:nth-child(1) > input")).click()
-    await driver.findElement(By.css("label:nth-child(1) > input")).sendKeys("pedrito@gmail.com")
+    const emailInput = await driver.findElement(By.css("label:nth-child(1) > input"));
+    await emailInput.click();
+    await emailInput.clear();
+    await emailInput.sendKeys("pedrito@gmail.com");
     
-    await driver.findElement(By.css("label:nth-child(2) > input")).click()
-    await driver.findElement(By.css("label:nth-child(2) > input")).sendKeys("Pedrito")
+    // 4. Escribir Contraseña (con pausa)
+    const passInput = await driver.findElement(By.css("label:nth-child(2) > input"));
+    await passInput.click();
+    await passInput.clear();
+    await passInput.sendKeys("Pedrito");
     
-    // 3. Click en entrar
+    // --- TRUCO: Click en el título para quitar el foco (blur) y asegurar que Vue guarda el dato ---
+    await driver.findElement(By.css("h1")).click();
+    await driver.sleep(1000); // Esperamos 1 segundo
+    
+    // 5. Entrar
+    console.log("Haciendo click en Entrar...");
     await driver.findElement(By.css("button")).click()
 
-    // 4. MOMENTO CRÍTICO: Esperar a entrar o CAPTURAR EL ERROR
+    // 6. Comprobación
     try {
-        // Esperamos a ver el botón del dashboard (.actions > .small)
         const botonAcciones = await driver.wait(
             until.elementLocated(By.css(".actions > .small")), 
             10000 
         );
-        // Si llegamos aquí, hemos entrado
         await botonAcciones.click();
 
     } catch (error) {
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // SI ENTRA AQUÍ, ES QUE EL LOGIN FALLÓ. VAMOS A VER POR QUÉ.
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        console.log("\n\n################################################");
-        console.log("⚠️ EL LOGIN HA FALLADO. DIAGNÓSTICO:");
+        // DIAGNÓSTICO SI FALLA
+        console.log("\n################################################");
+        console.log("⚠️ EL LOGIN FALLÓ.");
         
-        // A) ¿Hay alguna alerta visible?
+        // Ver si hay mensaje de error
         try {
-            let alert = await driver.switchTo().alert();
-            console.log("🔴 ALERTA DETECTADA: " + await alert.getText());
-            await alert.accept();
-        } catch (e) {
-            console.log("⚪ No hay alertas nativas (popups).");
-        }
-
-        // B) ¿Hay algún texto de error en rojo en la web?
-        try {
-           // Buscamos cualquier cosa que parezca un mensaje de error
            let bodyText = await driver.findElement(By.tagName("body")).getText();
-           console.log("📝 TEXTO VISIBLE EN PANTALLA:");
-           console.log(bodyText); 
+           // Filtramos un poco el texto para no ensuciar el log
+           console.log("TEXTO EN PANTALLA: \n" + bodyText.substring(0, 500)); 
         } catch(e) {}
-
-        console.log("################################################\n\n");
-        
-        // Volvemos a lanzar el error para que GitHub marque el test como fallido
+        console.log("################################################\n");
         throw error;
     }
 
