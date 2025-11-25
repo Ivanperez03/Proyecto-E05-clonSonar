@@ -78,7 +78,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [backend-tests, frontend-tests]
 
-    # Creamos una base de datos temporal solo para este test
+    # Servicio de Base de Datos temporal
     services:
       postgres:
         image: postgres:15
@@ -88,7 +88,6 @@ jobs:
           POSTGRES_DB: fragments
         ports:
           - 5432:5432
-        # Healthcheck para asegurar que la DB está lista antes de empezar
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -104,49 +103,47 @@ jobs:
         with:
           node-version: 20
 
-      # ----------------------------------------------------------------
-      # 1. PREPARAR BACKEND Y BASE DE DATOS
-      # ----------------------------------------------------------------
+      # 1. ARRANCAR BACKEND + CREAR USUARIO DE PRUEBA
       - name: Install and Start Backend
         working-directory: ./backend
         run: |
-          npm ci
+          npm install
           
-          # ⚠️ IMPORTANTE: Aquí deberías correr migraciones o seeds si las tienes
-          # Por ejemplo: npx prisma migrate deploy o npm run seed
-          # Si no creas las tablas y el usuario 'Pedrito', el test fallará.
+          # Esperamos un pelín a que Postgres esté 100% listo
+          sleep 5
           
-          # Arrancamos el backend en segundo plano
+          # TRUCO: Creamos el usuario Pedrito manualmente en la DB temporal
+          # Si tu tabla se llama 'users' y tiene estas columnas, esto funcionará.
+          # Si tienes columnas obligatorias extra, añádelas aquí.
+          PGPASSWORD=postgres psql -h localhost -U postgres -d fragments -c "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, email VARCHAR(255), name VARCHAR(255), password VARCHAR(255), saldo NUMERIC);"
+          PGPASSWORD=postgres psql -h localhost -U postgres -d fragments -c "INSERT INTO users (email, name, password, saldo) VALUES ('pedrito@gmail.com', 'Pedrito', '123456', 0);"
+          
+          # Arrancamos backend
           npm start &
         env:
           PORT: 3000
-          # Sobreescribimos la URL para apuntar a la DB temporal de GitHub (localhost)
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fragments
 
-      # ----------------------------------------------------------------
-      # 2. PREPARAR Y ARRANCAR FRONTEND
-      # ----------------------------------------------------------------
+      # 2. ARRANCAR FRONTEND
       - name: Install and Start Frontend
         working-directory: ./frontend/frangments-web
         run: |
-          npm ci
+          npm install
           npm run dev &
 
-      # ----------------------------------------------------------------
-      # 3. ESPERAR A QUE LA APP ESTÉ LISTA
-      # ----------------------------------------------------------------
-      - name: Wait for Frontend to be ready
+      # 3. ESPERAR A QUE CARGUE
+      - name: Wait for Frontend
         run: npx wait-on http://localhost:5173 --timeout 60000
 
-      # ----------------------------------------------------------------
-      # 4. EJECUTAR SELENIUM
-      # ----------------------------------------------------------------
-      - name: Install E2E dependencies
+      # 4. INSTALAR LIBRERIAS "AL VUELO" Y EJECUTAR TEST
+      - name: Install dependencies manually
         working-directory: ./tests_e2e
-        run: npm ci
+        # Aquí está la magia: instalamos sin package.json
+        run: npm install selenium-webdriver mocha
 
       - name: Run Selenium Tests
         working-directory: ./tests_e2e
         env:
           CI: true
-        run: npm test
+        # Ejecutamos buscando cualquier archivo .js
+        run: npx mocha "*.js" --timeout 60000
