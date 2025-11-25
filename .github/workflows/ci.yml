@@ -114,7 +114,7 @@ jobs:
           
           # REGISTRAMOS USUARIO "PEDRITO" (Usando localhost)
           # Esto es vital para que coincida con la configuración de cookies/CORS
-          curl -X POST http://localhost:3000/api/users \
+          curl --fail -v -X POST http://localhost:3000/api/users \
             -H "Content-Type: application/json" \
             -d '{"nombre": "Pedrito", "email": "pedrito@gmail.com", "telefono": "666777888", "password": "Pedrito", "admin": false}'
             
