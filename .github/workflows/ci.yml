@@ -104,10 +104,9 @@ jobs:
         working-directory: ./backend
         run: |
           npm install
-          
-          export PGPASSWORD=postgres
 
-          # 1. Crear tabla USERS 
+          # 1. CREAR TABLAS (Esto ya vimos que funciona)
+          export PGPASSWORD=postgres
           psql -h localhost -U postgres -d fragments -c "
             CREATE TABLE IF NOT EXISTS usuario (
               id_usuario SERIAL PRIMARY KEY,
@@ -125,22 +124,32 @@ jobs:
             );
           "
 
-          # Arrancamos en modo dev (localhost:3000)
+          # 2. ARRANCAR
           npm run dev &
-
-          # Esperamos a que arranque (10s cortesía + check puerto)
           sleep 10
           npx wait-on tcp:3000 --timeout 60000
           
-          # REGISTRAMOS USUARIO "PEDRITO" (Usando localhost)
-          # Esto es vital para que coincida con la configuración de cookies/CORS
-          curl --fail -v -X POST http://localhost:3000/api/users \
+          # 3. REGISTRAR USUARIO
+          curl --fail -s -X POST http://localhost:3000/api/users \
             -H "Content-Type: application/json" \
             -d '{"nombre": "Pedrito", "email": "pedrito@gmail.com", "telefono": "666777888", "password": "Pedrito", "tipo": "normal"}'
             
-          echo ">>> CONTENIDO DE LA TABLA USUARIO:"
-          export PGPASSWORD=postgres
-          psql -h localhost -U postgres -d fragments -c "SELECT * FROM usuario;"
+          # ==========================================================
+          # 🚨 TEST DE LA VERDAD: LOGIN MANUAL VÍA CURL 🚨
+          # ==========================================================
+          echo "---------------------------------------------------"
+          echo ">>> INTENTANDO LOGIN DIRECTO DESDE CONSOLA..."
+          
+          # Intentamos loguearnos tal cual lo haría el frontend
+          # Si esto falla (HTTP 401), el problema es el BACKEND (encriptación/lógica)
+          # Si esto funciona (HTTP 200), el problema es el FRONTEND (envía mal los datos)
+          
+          curl -v --fail -X POST http://localhost:3000/api/users/login \
+            -H "Content-Type: application/json" \
+            -d '{"email": "pedrito@gmail.com", "password": "Pedrito"}'
+            
+          echo "---------------------------------------------------"
+          # ==========================================================
 
         env:
           PORT: 3000
