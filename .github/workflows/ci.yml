@@ -78,7 +78,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [backend-tests, frontend-tests]
 
-    # Servicio de Base de Datos temporal
+    # Creamos una base de datos limpia para el test
     services:
       postgres:
         image: postgres:15
@@ -103,25 +103,27 @@ jobs:
         with:
           node-version: 20
 
-      # 1. ARRANCAR BACKEND + CREAR USUARIO DE PRUEBA
+      # 1. ARRANCAR BACKEND Y REGISTRAR USUARIO
       - name: Install and Start Backend
         working-directory: ./backend
         run: |
           npm install
           
-          # Esperamos un pelín a que Postgres esté 100% listo
-          sleep 5
-          
-          # TRUCO: Creamos el usuario Pedrito manualmente en la DB temporal
-          # Si tu tabla se llama 'users' y tiene estas columnas, esto funcionará.
-          # Si tienes columnas obligatorias extra, añádelas aquí.
-          PGPASSWORD=postgres psql -h localhost -U postgres -d fragments -c "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, email VARCHAR(255), name VARCHAR(255), password VARCHAR(255), saldo NUMERIC);"
-          PGPASSWORD=postgres psql -h localhost -U postgres -d fragments -c "INSERT INTO users (email, name, password, saldo) VALUES ('pedrito@gmail.com', 'Pedrito', '123456', 0);"
-          
-          # Arrancamos backend
+          # Arrancamos backend en segundo plano
           npm start &
+
+          # Esperamos a que el puerto 3000 responda
+          npx wait-on http://localhost:3000 --timeout 30000
+          
+          # REGISTRAMOS EL USUARIO "PEDRITO" CORRECTAMENTE
+          # Enviamos nombre, telefono, email y password para que el backend lo cree y encripte la pass
+          curl -X POST http://localhost:3000/register \
+            -H "Content-Type: application/json" \
+            -d '{"nombre": "Pedrito", "email": "pedrito@gmail.com", "telefono": "666777888", "password": "Pedrito", "admin": false}'
+            
         env:
           PORT: 3000
+          # Conectamos a la DB temporal de GitHub
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fragments
 
       # 2. ARRANCAR FRONTEND
@@ -131,19 +133,20 @@ jobs:
           npm install
           npm run dev &
 
-      # 3. ESPERAR A QUE CARGUE
+      # 3. ESPERAR A QUE CARGUE EL FRONT
       - name: Wait for Frontend
+        # Esperamos a que Vite arranque en el puerto 5173
         run: npx wait-on http://localhost:5173 --timeout 60000
 
-      # 4. INSTALAR LIBRERIAS "AL VUELO" Y EJECUTAR TEST
-      - name: Install dependencies manually
+      # 4. PREPARAR Y EJECUTAR SELENIUM
+      - name: Install E2E dependencies
         working-directory: ./tests_e2e
-        # Aquí está la magia: instalamos sin package.json
+        # Instalamos librerías manualmente porque no hay package.json ahí
         run: npm install selenium-webdriver mocha
 
       - name: Run Selenium Tests
         working-directory: ./tests_e2e
         env:
           CI: true
-        # Ejecutamos buscando cualquier archivo .js
+        # Ejecutamos todos los tests .js
         run: npx mocha "*.js" --timeout 60000
