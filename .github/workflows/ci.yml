@@ -14,7 +14,7 @@ on:
 jobs:
 
   # ===========================
-  # BACKEND TESTS
+  # 1. BACKEND TESTS (UNIT)
   # ===========================
   backend-tests:
     name: Backend unit tests
@@ -41,7 +41,7 @@ jobs:
 
 
   # ===========================
-  # FRONTEND TESTS
+  # 2. FRONTEND TESTS (UNIT)
   # ===========================
   frontend-tests:
     name: Frontend unit tests
@@ -67,11 +67,12 @@ jobs:
         run: npm run test:unit
 
   # ===========================
-  # E2E TESTS (SELENIUM)
+  # 3. E2E TESTS (SELENIUM)
   # ===========================
   e2e-tests:
     name: E2E Selenium Tests
     runs-on: ubuntu-latest
+    # Esperamos a que los unitarios pasen antes de lanzar Selenium
     needs: [backend-tests, frontend-tests]
 
     services:
@@ -98,21 +99,21 @@ jobs:
         with:
           node-version: 20
 
-      # 1. ARRANCAR BACKEND Y REGISTRAR USUARIO
+      # --- A. ARRANCAR BACKEND ---
       - name: Install and Start Backend
         working-directory: ./backend
         run: |
           npm install
           
-          # Arrancamos backend (escucha en localhost:3000)
+          # Arrancamos en modo dev (localhost:3000)
           npm run dev &
 
-          # TRUCO: Esperamos 5s y luego chequeamos TCP en 127.0.0.1
-          # Esto evita el bug de "localhost timeout" de wait-on
-          sleep 5
-          npx wait-on tcp:127.0.0.1:3000 --timeout 60000
+          # Esperamos a que arranque (10s cortesía + check puerto)
+          sleep 10
+          npx wait-on tcp:3000 --timeout 60000
           
-          # REGISTRO VIA CURL (Usamos localhost para que coincida también)
+          # REGISTRAMOS USUARIO "PEDRITO" (Usando localhost)
+          # Esto es vital para que coincida con la configuración de cookies/CORS
           curl -X POST http://localhost:3000/api/users \
             -H "Content-Type: application/json" \
             -d '{"nombre": "Pedrito", "email": "pedrito@gmail.com", "telefono": "666777888", "password": "Pedrito", "admin": false}'
@@ -121,20 +122,24 @@ jobs:
           PORT: 3000
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fragments
 
-      # 2. ARRANCAR FRONTEND
+      # --- B. ARRANCAR FRONTEND ---
       - name: Install and Start Frontend
         working-directory: ./frontend/frangments-web
         run: |
           npm install
-          # Vite --host expone la IP, pero el test usará localhost
+          
+          # Configuración CLAVE: Forzamos a Vite a saber que la API está en localhost:3000
+          echo "VITE_API_URL=http://localhost:3000" > .env
+          
+          # Arrancamos exponiendo host (--host) para que GitHub Actions no bloquee la red,
+          # pero internamente seguiremos accediendo como localhost.
           npm run dev -- --host & 
 
-      # 3. ESPERAR AL FRONTEND
+      # --- C. ESPERAR AL FRONTEND ---
       - name: Wait for Frontend
-        # Chequeamos que el puerto TCP esté abierto
-        run: npx wait-on tcp:127.0.0.1:5173 --timeout 60000
+        run: npx wait-on tcp:5173 --timeout 60000
 
-      # 4. PREPARAR Y EJECUTAR SELENIUM
+      # --- D. EJECUTAR SELENIUM ---
       - name: Install E2E dependencies
         working-directory: ./tests_e2e
         run: npm install selenium-webdriver mocha
@@ -143,5 +148,5 @@ jobs:
         working-directory: ./tests_e2e
         env:
           CI: true
-        # El test JS ahora usa "http://localhost:5173"
+        # Asegúrate de que tu .js hace driver.get('http://localhost:5173')
         run: npx mocha "*.js" --timeout 60000
