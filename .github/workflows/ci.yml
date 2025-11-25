@@ -2,17 +2,12 @@ name: CI Fragments
 
 on:
   push:
-    branches:
-      - main
-      - dev
-      - devIvan
+    branches: [main, dev, devIvan]
   pull_request:
-    branches:
-      - main
-      - dev
+    branches: [main, dev]
 
 jobs:
-  # 1. UNIT TESTS (Los dejamos separados porque no necesitan servidor corriendo)
+  # 1. UNIT TESTS
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
@@ -33,9 +28,7 @@ jobs:
           npm install
           npm run test:unit
 
-  # ===========================
-  # 2. E2E TESTS (SELENIUM)
-  # ===========================
+  # 2. E2E TESTS (FULL STACK)
   e2e-tests:
     name: E2E Selenium Tests
     runs-on: ubuntu-latest
@@ -65,11 +58,14 @@ jobs:
         with:
           node-version: 20
 
-      # --- AQUÍ ESTÁ LA SOLUCIÓN: TODO JUNTO PARA QUE NO MUERA NADA ---
       - name: Run Full Stack E2E
         run: |
-          # 1. PREPARAR BASE DE DATOS
+          # -----------------------------------------------------------
+          # 1. PREPARAR BASE DE DATOS (SEGÚN TU IMAGEN EXACTA)
+          # -----------------------------------------------------------
           export PGPASSWORD=postgres
+          
+          # A) TABLA USUARIO
           psql -h localhost -U postgres -d fragments -c "
             CREATE TABLE IF NOT EXISTS usuario (
               id_usuario SERIAL PRIMARY KEY,
@@ -80,6 +76,49 @@ jobs:
               tipo VARCHAR(50) DEFAULT 'normal'
             );
           "
+
+          # B) TABLA PLATAFORMA (Necesaria antes de plan_sub)
+          psql -h localhost -U postgres -d fragments -c "
+            CREATE TABLE IF NOT EXISTS plataforma (
+              id_plataforma SERIAL PRIMARY KEY,
+              nombre VARCHAR(255)
+            );
+          "
+
+          # C) TABLA GRUPO (Depende de usuario por id_jefe)
+          psql -h localhost -U postgres -d fragments -c "
+            CREATE TABLE IF NOT EXISTS grupo (
+              id_grupo SERIAL PRIMARY KEY,
+              nombre VARCHAR(255),
+              fecha_creacion DATE DEFAULT CURRENT_DATE,
+              estado VARCHAR(50),
+              id_jefe INTEGER REFERENCES usuario(id_usuario)
+            );
+          "
+
+          # D) TABLA PLAN_SUB (Depende de plataforma y grupo)
+          psql -h localhost -U postgres -d fragments -c "
+            CREATE TABLE IF NOT EXISTS plan_sub (
+              id_plan SERIAL PRIMARY KEY,
+              id_plataforma INTEGER REFERENCES plataforma(id_plataforma),
+              precio_plan NUMERIC,
+              fecha_vencimiento DATE,
+              id_grupo INTEGER REFERENCES grupo(id_grupo),
+              nmiembros INTEGER
+            );
+          "
+
+          # E) TABLA MIEMBRO_GRUPO (Depende de grupo y usuario)
+          psql -h localhost -U postgres -d fragments -c "
+            CREATE TABLE IF NOT EXISTS miembro_grupo (
+              id_grupo INTEGER REFERENCES grupo(id_grupo),
+              id_usuario INTEGER REFERENCES usuario(id_usuario),
+              fecha_ingreso DATE DEFAULT CURRENT_DATE,
+              PRIMARY KEY (id_grupo, id_usuario)
+            );
+          "
+
+          # F) TABLA CARTERA (Depende de usuario)
           psql -h localhost -U postgres -d fragments -c "
             CREATE TABLE IF NOT EXISTS cartera (
               id_usuario INTEGER PRIMARY KEY REFERENCES usuario(id_usuario),
@@ -87,39 +126,55 @@ jobs:
             );
           "
 
+          # G) TABLA TRANSACCION (Por si acaso se consulta)
+          psql -h localhost -U postgres -d fragments -c "
+            CREATE TABLE IF NOT EXISTS transaccion (
+              id_transaccion SERIAL PRIMARY KEY,
+              id_plan_sub INTEGER REFERENCES plan_sub(id_plan),
+              id_usuario_origen INTEGER REFERENCES usuario(id_usuario),
+              id_usuario_final INTEGER REFERENCES usuario(id_usuario),
+              precio NUMERIC,
+              comision NUMERIC,
+              fecha_trans DATE DEFAULT CURRENT_DATE
+            );
+          "
+
+          # -----------------------------------------------------------
           # 2. ARRANCAR BACKEND (Y dejarlo vivo)
+          # -----------------------------------------------------------
           cd backend
           npm install
-          # Inyectamos el log espía por si acaso, pero ya no debería hacer falta
-          sed -i 's/app.use("\/api", routes);/app.use((req, res, next) => { console.log(">>> REQUEST BODY:", JSON.stringify(req.body)); next(); }); app.use("\/api", routes);/' src/app.ts || true
-          
-          # Arrancamos servidor
           export PORT=3000
           export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fragments
           export JWT_SECRET="secreto_super_seguro_para_tests_en_ci"
           npm run dev &
           cd ..
 
+          # -----------------------------------------------------------
           # 3. ARRANCAR FRONTEND (Y dejarlo vivo)
+          # -----------------------------------------------------------
           cd frontend/frangments-web
           npm install
           echo "VITE_API_URL=http://localhost:3000" > .env
           npm run dev -- --host & 
           cd ../..
 
+          # -----------------------------------------------------------
           # 4. ESPERAR A QUE AMBOS RESPONDAN
-          # Esperamos a que el puerto 3000 (back) y 5173 (front) estén abiertos
+          # -----------------------------------------------------------
           npx wait-on tcp:3000 tcp:5173 --timeout 60000
 
-          # 5. REGISTRAR USUARIO (Ahora que todo está encendido)
+          # -----------------------------------------------------------
+          # 5. REGISTRAR USUARIO
+          # -----------------------------------------------------------
           curl --fail -X POST http://localhost:3000/api/users \
             -H "Content-Type: application/json" \
             -d '{"nombre": "Pedrito", "email": "pedrito@gmail.com", "telefono": "666777888", "password": "Pedrito", "tipo": "normal"}'
 
-          # 6. LANZAR SELENIUM (Dentro del mismo paso, así el back sigue vivo)
+          # -----------------------------------------------------------
+          # 6. LANZAR SELENIUM
+          # -----------------------------------------------------------
           cd tests_e2e
           npm install selenium-webdriver mocha
           export CI=true
-          
-          # Ejecutamos el test
           npx mocha "*.js" --timeout 60000
