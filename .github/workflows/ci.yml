@@ -12,67 +12,34 @@ on:
       - dev
 
 jobs:
-
-  # ===========================
-  # 1. BACKEND TESTS (UNIT)
-  # ===========================
-  backend-tests:
-    name: Backend unit tests
+  # 1. UNIT TESTS (Los dejamos separados porque no necesitan servidor corriendo)
+  unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
-
-    defaults:
-      run:
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      
+      - name: Backend Tests
         working-directory: ./backend
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
+        run: |
+          npm install
+          npm test
           
-      - name: Install deps (backend)
-        run: npm install
-
-      - name: Run backend tests
-        run: npm test
-
-
-  # ===========================
-  # 2. FRONTEND TESTS (UNIT)
-  # ===========================
-  frontend-tests:
-    name: Frontend unit tests
-    runs-on: ubuntu-latest
-
-    defaults:
-      run:
+      - name: Frontend Tests
         working-directory: ./frontend/frangments-web
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install deps (frontend)
-        run: npm install
-
-      - name: Run frontend unit tests
-        run: npm run test:unit
+        run: |
+          npm install
+          npm run test:unit
 
   # ===========================
-  # 3. E2E TESTS (SELENIUM)
+  # 2. E2E TESTS (SELENIUM)
   # ===========================
   e2e-tests:
     name: E2E Selenium Tests
     runs-on: ubuntu-latest
-    needs: [backend-tests, frontend-tests]
+    needs: [unit-tests]
 
     services:
       postgres:
@@ -98,13 +65,10 @@ jobs:
         with:
           node-version: 20
 
-      # --- A. ARRANCAR BACKEND ---
-      - name: Install and Start Backend
-        working-directory: ./backend
+      # --- AQUÍ ESTÁ LA SOLUCIÓN: TODO JUNTO PARA QUE NO MUERA NADA ---
+      - name: Run Full Stack E2E
         run: |
-          npm install
-
-          # 1. CREAR TABLAS
+          # 1. PREPARAR BASE DE DATOS
           export PGPASSWORD=postgres
           psql -h localhost -U postgres -d fragments -c "
             CREATE TABLE IF NOT EXISTS usuario (
@@ -123,46 +87,39 @@ jobs:
             );
           "
 
-          # ==========================================================
-          # 🕵️ ESPÍA GLOBAL: MODIFICAMOS APP.TS
-          # Inyectamos un console.log justo antes de las rutas para ver TODO lo que llega
-          # ==========================================================
-          sed -i 's/app.use("\/api", routes);/app.use((req, res, next) => { console.log(">>> REQUEST BODY:", JSON.stringify(req.body)); next(); }); app.use("\/api", routes);/' src/app.ts || echo "⚠️ FALLO AL INYECTAR EN APP.TS"
-
-          # 2. ARRANCAR
-          npm run dev &
-          sleep 10
-          npx wait-on tcp:3000 --timeout 60000
+          # 2. ARRANCAR BACKEND (Y dejarlo vivo)
+          cd backend
+          npm install
+          # Inyectamos el log espía por si acaso, pero ya no debería hacer falta
+          sed -i 's/app.use("\/api", routes);/app.use((req, res, next) => { console.log(">>> REQUEST BODY:", JSON.stringify(req.body)); next(); }); app.use("\/api", routes);/' src/app.ts || true
           
-          # 3. REGISTRAR USUARIO (Pedrito)
-          curl --fail -s -X POST http://localhost:3000/api/users \
-            -H "Content-Type: application/json" \
-            -d '{"nombre": "Pedrito", "mail": "pedrito@gmail.com", "telefono": "666777888", "constrasena": "Pedrito", "tipo": "normal"}'
-            
-        env:
-          PORT: 3000
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fragments
-          JWT_SECRET: "secreto_super_seguro_para_tests_en_ci"
+          # Arrancamos servidor
+          export PORT=3000
+          export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fragments
+          export JWT_SECRET="secreto_super_seguro_para_tests_en_ci"
+          npm run dev &
+          cd ..
 
-      # --- B. ARRANCAR FRONTEND ---
-      - name: Install and Start Frontend
-        working-directory: ./frontend/frangments-web
-        run: |
+          # 3. ARRANCAR FRONTEND (Y dejarlo vivo)
+          cd frontend/frangments-web
           npm install
           echo "VITE_API_URL=http://localhost:3000" > .env
           npm run dev -- --host & 
+          cd ../..
 
-      # --- C. ESPERAR AL FRONTEND ---
-      - name: Wait for Frontend
-        run: npx wait-on tcp:5173 --timeout 60000
+          # 4. ESPERAR A QUE AMBOS RESPONDAN
+          # Esperamos a que el puerto 3000 (back) y 5173 (front) estén abiertos
+          npx wait-on tcp:3000 tcp:5173 --timeout 60000
 
-      # --- D. EJECUTAR SELENIUM ---
-      - name: Install E2E dependencies
-        working-directory: ./tests_e2e
-        run: npm install selenium-webdriver mocha
+          # 5. REGISTRAR USUARIO (Ahora que todo está encendido)
+          curl --fail -X POST http://localhost:3000/api/users \
+            -H "Content-Type: application/json" \
+            -d '{"nombre": "Pedrito", "email": "pedrito@gmail.com", "telefono": "666777888", "password": "Pedrito", "tipo": "normal"}'
 
-      - name: Run Selenium Tests
-        working-directory: ./tests_e2e
-        env:
-          CI: true
-        run: npx mocha "*.js" --timeout 60000
+          # 6. LANZAR SELENIUM (Dentro del mismo paso, así el back sigue vivo)
+          cd tests_e2e
+          npm install selenium-webdriver mocha
+          export CI=true
+          
+          # Ejecutamos el test
+          npx mocha "*.js" --timeout 60000
