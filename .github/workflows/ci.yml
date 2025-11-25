@@ -78,7 +78,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: [backend-tests, frontend-tests]
 
-    # Creamos una base de datos limpia para el test
     services:
       postgres:
         image: postgres:15
@@ -115,15 +114,13 @@ jobs:
           # Esperamos a que el puerto 3000 responda
           npx wait-on http://localhost:3000 --timeout 30000
           
-          # REGISTRAMOS EL USUARIO "PEDRITO" CORRECTAMENTE
-          # Enviamos nombre, telefono, email y password para que el backend lo cree y encripte la pass
-          curl -X POST http://localhost:3000/register \
+          # REGISTRO VIA CURL (CORREGIDO A /api/users)
+          curl -X POST http://localhost:3000/api/users \
             -H "Content-Type: application/json" \
             -d '{"nombre": "Pedrito", "email": "pedrito@gmail.com", "telefono": "666777888", "password": "Pedrito", "admin": false}'
             
         env:
           PORT: 3000
-          # Conectamos a la DB temporal de GitHub
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fragments
 
       # 2. ARRANCAR FRONTEND
@@ -133,20 +130,17 @@ jobs:
           npm install
           npm run dev &
 
-      # 3. ESPERAR A QUE CARGUE EL FRONT
+      # 3. ESPERAR AL FRONTEND
       - name: Wait for Frontend
-        # Esperamos a que Vite arranque en el puerto 5173
         run: npx wait-on http://localhost:5173 --timeout 60000
 
       # 4. PREPARAR Y EJECUTAR SELENIUM
       - name: Install E2E dependencies
         working-directory: ./tests_e2e
-        # Instalamos librerías manualmente porque no hay package.json ahí
         run: npm install selenium-webdriver mocha
 
       - name: Run Selenium Tests
         working-directory: ./tests_e2e
         env:
           CI: true
-        # Ejecutamos todos los tests .js
         run: npx mocha "*.js" --timeout 60000
