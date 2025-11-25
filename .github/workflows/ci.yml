@@ -105,6 +105,26 @@ jobs:
         run: |
           npm install
           
+          export PGPASSWORD=postgres
+
+          # 1. Crear tabla USERS 
+          psql -h localhost -U postgres -d fragments -c "
+            CREATE TABLE IF NOT EXISTS usuario (
+              id_usuario SERIAL PRIMARY KEY,
+              mail VARCHAR(255) UNIQUE NOT NULL,
+              nombre VARCHAR(255) NOT NULL,
+              contrasena VARCHAR(255) NOT NULL,
+              telefono VARCHAR(50),
+              tipo VARCHAR(50) DEFAULT 'normal'
+            );
+          "
+          psql -h localhost -U postgres -d fragments -c "
+            CREATE TABLE IF NOT EXISTS cartera (
+              id_usuario INTEGER PRIMARY KEY REFERENCES usuario(id_usuario),
+              saldo NUMERIC DEFAULT 0
+            );
+          "
+
           # Arrancamos en modo dev (localhost:3000)
           npm run dev &
 
@@ -116,7 +136,7 @@ jobs:
           # Esto es vital para que coincida con la configuración de cookies/CORS
           curl --fail -v -X POST http://localhost:3000/api/users \
             -H "Content-Type: application/json" \
-            -d '{"nombre": "Pedrito", "email": "pedrito@gmail.com", "telefono": "666777888", "password": "Pedrito", "admin": false}'
+            -d '{"nombre": "Pedrito", "email": "pedrito@gmail.com", "telefono": "666777888", "password": "Pedrito", "tipo": "normal"}'
             
         env:
           PORT: 3000
