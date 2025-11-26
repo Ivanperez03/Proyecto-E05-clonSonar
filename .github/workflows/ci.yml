@@ -60,9 +60,8 @@ jobs:
 
       - name: Run Full Stack E2E
         run: |
-          # -----------------------------------------------------------
-          # 1. PREPARAR BASE DE DATOS (SEGÚN TU IMAGEN EXACTA)
-          # -----------------------------------------------------------
+          # 1. PREPARAR BASE DE DATOS 
+
           export PGPASSWORD=postgres
           
           # A) TABLA USUARIO
@@ -139,9 +138,7 @@ jobs:
             );
           "
 
-          # -----------------------------------------------------------
-          # 2. ARRANCAR BACKEND (Y dejarlo vivo)
-          # -----------------------------------------------------------
+          # 2. ARRANCAR BACKEND
           cd backend
           npm install
           export PORT=3000
@@ -150,23 +147,17 @@ jobs:
           npm run dev &
           cd ..
 
-          # -----------------------------------------------------------
           # 3. ARRANCAR FRONTEND (Y dejarlo vivo)
-          # -----------------------------------------------------------
           cd frontend/frangments-web
           npm install
           echo "VITE_API_URL=http://localhost:3000" > .env
           npm run dev -- --host & 
           cd ../..
 
-          # -----------------------------------------------------------
           # 4. ESPERAR A QUE AMBOS RESPONDAN
-          # -----------------------------------------------------------
           npx wait-on tcp:3000 tcp:5173 --timeout 60000
 
-          # -----------------------------------------------------------
           # 5. REGISTRAR USUARIO
-          # -----------------------------------------------------------
           curl --fail -X POST http://localhost:3000/api/users \
             -H "Content-Type: application/json" \
             -d '{"nombre": "Pedrito", "email": "pedrito@gmail.com", "telefono": "666777888", "password": "Pedrito", "tipo": "normal"}'
