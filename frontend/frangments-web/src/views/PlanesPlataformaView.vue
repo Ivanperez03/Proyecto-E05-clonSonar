@@ -36,14 +36,28 @@
 
           <div class="plan-meta">
             <div class="meta-item">
-              <span class="meta-label">Precio mensual: </span>
-              <span class="meta-value precio">
-                {{ plan.precioMensual }} €
+              <span class="meta-label">Precio total mensual </span>
+              <span class="meta-value">
+                {{ plan.precioTotalMensual }} /mes€
               </span>
             </div>
 
             <div class="meta-item">
-              <span class="meta-label">Vence el: </span>
+              <span class="meta-label">Miembros actuales </span>
+              <span class="meta-value">
+                {{ plan.miembrosActuales }} / {{ plan.capacidadTotal }}
+              </span>
+            </div>
+
+            <div class="meta-item">
+              <span class="meta-label">Tu pagarías mensualmente: </span>
+              <span class="meta-value precio">
+                {{ plan.precioPorUsuario }} €/mes
+              </span>
+            </div>
+
+            <div class="meta-item">
+              <span class="meta-label">Vence el </span>
               <span class="meta-value">
                 {{ plan.fechaVencimiento }}
               </span>
@@ -66,7 +80,6 @@
   </div>
 </template>
 
-
 <script setup lang="ts">
 import { onMounted, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -83,13 +96,17 @@ const idPlataforma = computed(() => Number(route.params.id_plataforma));
 const nombrePlataforma = computed(() => route.params.plataforma as string);
 
 const planesUI = computed(() =>
-  planes.value.map((p) => ({
+  planes.value.map((p: any) => ({
     id: p.id_plan,
     nombreGrupo: p.nombre_grupo,
-    precioMensual: Number(p.precio_mensual),
+    precioTotalMensual: Number(p.precio_total_mensual).toFixed(2),
+    precioPorUsuario: Number(p.precio_por_usuario).toFixed(2),
+    miembrosActuales: Number(p.miembros_actuales) ?? 0,
+    capacidadTotal: Number(p.capacidad_total) ?? 0,
     fechaVencimiento: new Date(p.fecha_vencimiento).toLocaleDateString("es-ES"),
   }))
 );
+
 
 async function cargar() {
   if (!idPlataforma.value) return;
@@ -104,6 +121,7 @@ async function unirse(plan: any) {
   try {
     const resp = await store.unirse(plan.id);
     alert(resp.message);
+    router.push({ name: "dashboard" });
   } catch (e: any) {
     alert(e.message);
   }
@@ -112,6 +130,7 @@ async function unirse(plan: any) {
 onMounted(cargar);
 watch(idPlataforma, cargar);
 </script>
+
 
 
 <style scoped>

@@ -1,21 +1,21 @@
 export class Alerta {
-  id: number;
-  mensaje: string;
-  tipo: string;
-  vista: boolean;
-  fecha: string | null;
-  createdAt?: string;
-
-  constructor(dto: any) {
-    this.id = dto.id;
-    this.mensaje = dto.mensaje;
-    this.tipo = dto.tipo ?? "sistema";
-    this.vista = dto.vista ?? false;
-    this.fecha = dto.fecha ?? null;
-    this.createdAt = dto.createdAt;
-  }
+  constructor(
+    public id: number,
+    public mensaje: string,
+    public tipo: string,
+    public vista: boolean,
+    public fecha: string,
+    public createdAt: string
+  ) {}
 
   static fromDTO(dto: any): Alerta {
-    return new Alerta(dto);
+    return new Alerta(
+      dto.id,
+      dto.mensaje,
+      dto.tipo,
+      dto.vista ?? false,                    
+      dto.fecha ?? dto.createdAt,
+      dto.createdAt ?? dto.fecha
+    );
   }
 }

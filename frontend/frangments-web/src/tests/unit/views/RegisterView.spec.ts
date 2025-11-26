@@ -24,7 +24,6 @@ describe("RegisterView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
-
   const fillForm = async (wrapper: any, overrides: Partial<any> = {}) => {
     const nombre = overrides.nombre ?? "Pepe";
     const apellidos = overrides.apellidos ?? "Pérez";
@@ -33,7 +32,6 @@ describe("RegisterView", () => {
     const password = overrides.password ?? "123456";
     const confirmPassword =
       overrides.confirmPassword ?? overrides.password ?? "123456";
-
     const inputs = wrapper.findAll("input");
     await inputs[0].setValue(nombre);
     await inputs[1].setValue(apellidos);
@@ -42,14 +40,11 @@ describe("RegisterView", () => {
     await inputs[4].setValue(password);
     await inputs[5].setValue(confirmPassword);
   };
-
   it("si las contraseñas no coinciden muestra mensaje y no llama a la API", async () => {
     const wrapper = mount(RegisterView);
-
     await fillForm(wrapper, { password: "123456", confirmPassword: "654321" });
     await wrapper.find("form").trigger("submit.prevent");
     await flushPromises();
-
     expect(wrapper.text()).toContain("Las contraseñas no coinciden.");
     expect(postMock).not.toHaveBeenCalled();
   });

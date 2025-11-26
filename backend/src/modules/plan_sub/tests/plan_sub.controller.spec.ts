@@ -38,6 +38,7 @@ describe("planSubController.createSubscription", () => {
       // precio: 10,
       // fecha_vencimiento: "2025-12-31",
       // id_grupo: 5,
+      // nmiembros: 4,
     };
 
     await planSubController.createSubscription(req, res);
@@ -55,6 +56,7 @@ describe("planSubController.createSubscription", () => {
       precio: 12.99,
       fecha_vencimiento: "2025-12-31",
       id_grupo: 3,
+      nmiembros: 4,
     };
 
     const fakeSub = {
@@ -63,6 +65,7 @@ describe("planSubController.createSubscription", () => {
       precio_plan: 12.99,
       fecha_vencimiento: "2025-12-31T00:00:00.000Z",
       id_grupo: 3,
+      nmiembros: 4,
     };
 
     (planSubRepo.createSubscription as any).mockResolvedValue(fakeSub);
@@ -74,6 +77,7 @@ describe("planSubController.createSubscription", () => {
       precio: 12.99,
       fecha_vencimiento: "2025-12-31",
       id_grupo: 3,
+      nmiembros: 4,
     });
     expect(status).toHaveBeenCalledWith(201);
     expect(json).toHaveBeenCalledWith({
@@ -88,6 +92,7 @@ describe("planSubController.createSubscription", () => {
       precio: 12.99,
       fecha_vencimiento: "2025-12-31",
       id_grupo: 3,
+      nmiembros: 4,
     };
 
     (planSubRepo.createSubscription as any).mockRejectedValue(

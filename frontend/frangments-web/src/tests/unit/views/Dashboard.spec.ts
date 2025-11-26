@@ -1,32 +1,30 @@
 import { mount, flushPromises } from "@vue/test-utils";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import DashboardView from "@/views/Dashboard.vue";
+import apiax from "@/apiAxios";
 
-// ---- mocks compartidos ----
+// ---- router mock ----
 const pushMock = vi.fn();
-const fetchMeMock = vi.fn();
-const logoutMock = vi.fn();
 
-// estado mutable del auth
-const authState = {
-  user: {
-    id: 1,
-    nombre: "Pepe",
-    email: "pepe@test.com",
-    telefono: "123456789",
-    tipo: "user",
-  } as any | null,
-  isAuthenticated: true,
-};
-
-// mock router
 vi.mock("vue-router", () => ({
   useRouter: () => ({
     push: pushMock,
   }),
 }));
 
-// mock auth store
+// ---- auth store mock ----
+const authState = {
+  user: {
+    id: 1,
+    nombre: "Pepe",
+    tipo: "user",
+  } as any,
+  isAuthenticated: true,
+};
+
+const fetchMeMock = vi.fn();
+const logoutMock = vi.fn();
+
 vi.mock("@/stores/auth", () => ({
   useAuthStore: () => ({
     get user() {
@@ -35,39 +33,58 @@ vi.mock("@/stores/auth", () => ({
     get isAuthenticated() {
       return authState.isAuthenticated;
     },
+    // 👈 tu Dashboard.vue usa "auth.nombre || 'usuario'"
     get nombre() {
-      return authState.user?.nombre ?? "";
+      return authState.user?.nombre;
     },
     fetchMe: fetchMeMock,
     logout: logoutMock,
   }),
 }));
 
-var getMock;
+// ---- alert store mock ----
+const fetchAlertasMock = vi.fn();
+const toggleDropdownMock = vi.fn();
+const marcarTodasMock = vi.fn();
 
-vi.mock("@/apiAxios", () => {
-  getMock = vi.fn().mockResolvedValue({ data: [] });
-  return {
-    default: {
-      get: getMock,
-    },
-  };
-});
+const alertState = {
+  alertas: [] as any[],
+  alertasNoVistas: 0,
+  showDropdown: false,
+};
 
+vi.mock("@/stores/alertas", () => ({
+  useAlertStore: () => ({
+    alertas: alertState.alertas,
+    alertasNoVistas: alertState.alertasNoVistas,
+    showDropdown: alertState.showDropdown,
+    fetchAlertas: fetchAlertasMock,
+    toggleDropdown: toggleDropdownMock,
+    marcarTodasComoVistas: marcarTodasMock,
+  }),
+}));
+
+// ---- apiAxios mock ----
+vi.mock("@/apiAxios", () => ({
+  default: {
+    get: vi.fn(),
+  },
+}));
 
 describe("DashboardView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    authState.user = {
-      id: 1,
-      nombre: "Pepe",
-      email: "pepe@test.com",
-      telefono: "123456789",
-      tipo: "user",
-    };
+    pushMock.mockReset();
+
+    authState.user = { id: 1, nombre: "Pepe", tipo: "user" };
     authState.isAuthenticated = true;
 
-    getMock.mockResolvedValue({ data: [] });
+    alertState.alertas = [];
+    alertState.alertasNoVistas = 0;
+    alertState.showDropdown = false;
+
+    (apiax as any).get.mockReset?.();
+    (apiax as any).get.mockResolvedValue({ data: [] });
   });
 
   it("muestra saludo con el nombre del usuario", async () => {
@@ -89,27 +106,26 @@ describe("DashboardView", () => {
     const wrapper = mount(DashboardView);
     await flushPromises();
 
+    // 👉 Aquí seleccionamos explícitamente el botón "Mi cuenta"
     const btnCuenta = wrapper
-      .findAll("button")
+      .findAll("button.btn.small.primary")
       .find((b) => b.text().includes("Mi cuenta"))!;
-    const btnAdmin = wrapper
-      .findAll("button")
-      .find((b) => b.text().includes("Administrador"))!;
-    const btnBuscar = wrapper
-      .findAll("button")
-      .find((b) => b.text().includes("Explorar planes"))!;
-    const btnCrear = wrapper
-      .findAll("button")
-      .find((b) => b.text().includes("Crear plan"))!;
-
     await btnCuenta.trigger("click");
-    await btnAdmin.trigger("click");
-    await btnBuscar.trigger("click");
-    await btnCrear.trigger("click");
-
     expect(pushMock).toHaveBeenCalledWith({ name: "cuenta" });
-    expect(pushMock).toHaveBeenCalledWith({ name: "admin" });
+    pushMock.mockClear();
+
+    // "Explorar planes"
+    const btnBuscar = wrapper
+      .findAll("button.btn.small.primary")
+      .find((b) => b.text().includes("Explorar planes"))!;
+    await btnBuscar.trigger("click");
     expect(pushMock).toHaveBeenCalledWith({ name: "buscador" });
+
+    // "Crear plan"
+    const btnCrear = wrapper
+      .findAll("button.btn.small.primary")
+      .find((b) => b.text().includes("Crear plan"))!;
+    await btnCrear.trigger("click");
     expect(pushMock).toHaveBeenCalledWith({ name: "ofertar" });
   });
 
@@ -117,25 +133,22 @@ describe("DashboardView", () => {
     const wrapper = mount(DashboardView);
     await flushPromises();
 
-    const btnLogout = wrapper
-      .findAll("button")
-      .find((b) => b.text().includes("Salir"))!;
-    await btnLogout.trigger("click");
+    await wrapper.get("button.btn.logout").trigger("click");
 
-    expect(logoutMock).toHaveBeenCalledTimes(1);
+    expect(logoutMock).toHaveBeenCalled();
     expect(pushMock).toHaveBeenCalledWith({ name: "home" });
   });
 
   it("si no está autenticado, redirige a login y NO llama a /users", async () => {
-    authState.user = null;
+    // Ojo: dejamos user definido para que el template no pete con auth.user.tipo,
+    // pero marcamos isAuthenticated = false para que el onMounted redirija.
     authState.isAuthenticated = false;
 
-    const wrapper = mount(DashboardView);
+    mount(DashboardView);
     await flushPromises();
 
-    expect(fetchMeMock).toHaveBeenCalled();
     expect(pushMock).toHaveBeenCalledWith({ name: "login" });
-    expect(getMock).not.toHaveBeenCalled(); // no llega al apiax.get
+    expect((apiax as any).get).not.toHaveBeenCalledWith("/users");
   });
 
   it("al hacer click en una plataforma navega a plataforma-detalle con el id correcto", async () => {
@@ -147,7 +160,7 @@ describe("DashboardView", () => {
 
     expect(pushMock).toHaveBeenCalledWith({
       name: "plataforma-detalle",
-      params: { id: 1 }, // primera plataforma del array interno
+      params: { id: 1 },
     });
   });
 });

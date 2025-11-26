@@ -8,7 +8,7 @@ const router = Router();
 router.post("/subscribe", planSubController.createSubscription);
 
 // listar planes activos de una plataforma
-router.get("/plataforma/:id_plataforma/activos", planSubController.getActivePlansForPlatform);
+router.get("/plataforma/:id_plataforma/activos", authMiddleware, planSubController.getActivePlansForPlatform);
 
 // unirse al grupo de un plan
 router.post("/:id_plan/unirse", authMiddleware, planSubController.joinPlanGroup);

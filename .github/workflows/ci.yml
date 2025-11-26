@@ -2,56 +2,52 @@ name: CI Fragments
 
 on:
   push:
-    branches:
-      - main
-      - dev
-      - devIvan
+    branches: [main, dev, devIvan]
   pull_request:
-    branches:
-      - main
-      - dev
+    branches: [main, dev]
 
 jobs:
-
-  # ===========================
-  # BACKEND TESTS
-  # ===========================
-  backend-tests:
-    name: Backend unit tests
+  # 1. UNIT TESTS
+  unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
-
-    defaults:
-      run:
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      
+      - name: Backend Tests
         working-directory: ./backend
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: backend/package-lock.json
-
-      - name: Install deps (backend)
-        run: npm ci
-
-      - name: Run backend tests
-        run: npm test
-
-
-  # ===========================
-  # FRONTEND TESTS
-  # ===========================
-  frontend-tests:
-    name: Frontend unit tests
-    runs-on: ubuntu-latest
-
-    defaults:
-      run:
+        run: |
+          npm install
+          npm test
+          
+      - name: Frontend Tests
         working-directory: ./frontend/frangments-web
+        run: |
+          npm install
+          npm run test:unit
+
+  # 2. E2E TESTS (FULL STACK)
+  e2e-tests:
+    name: E2E Selenium Tests
+    runs-on: ubuntu-latest
+    needs: [unit-tests]
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: fragments
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout repo
@@ -61,37 +57,124 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-          cache-dependency-path: frontend/frangments-web/package-lock.json
 
-      - name: Install deps (frontend)
-        run: npm ci
+      - name: Run Full Stack E2E
+        run: |
+          # -----------------------------------------------------------
+          # 1. PREPARAR BASE DE DATOS (SEGÚN TU IMAGEN EXACTA)
+          # -----------------------------------------------------------
+          export PGPASSWORD=postgres
+          
+          # A) TABLA USUARIO
+          psql -h localhost -U postgres -d fragments -c "
+            CREATE TABLE IF NOT EXISTS usuario (
+              id_usuario SERIAL PRIMARY KEY,
+              mail VARCHAR(255) UNIQUE NOT NULL,
+              nombre VARCHAR(255) NOT NULL,
+              contrasena VARCHAR(255) NOT NULL,
+              telefono VARCHAR(50),
+              tipo VARCHAR(50) DEFAULT 'normal'
+            );
+          "
 
-      - name: Run frontend unit tests
-        run: npm run test:unit
+          # B) TABLA PLATAFORMA (Necesaria antes de plan_sub)
+          psql -h localhost -U postgres -d fragments -c "
+            CREATE TABLE IF NOT EXISTS plataforma (
+              id_plataforma SERIAL PRIMARY KEY,
+              nombre VARCHAR(255)
+            );
+          "
 
+          # C) TABLA GRUPO (Depende de usuario por id_jefe)
+          psql -h localhost -U postgres -d fragments -c "
+            CREATE TABLE IF NOT EXISTS grupo (
+              id_grupo SERIAL PRIMARY KEY,
+              nombre VARCHAR(255),
+              fecha_creacion DATE DEFAULT CURRENT_DATE,
+              estado VARCHAR(50),
+              id_jefe INTEGER REFERENCES usuario(id_usuario)
+            );
+          "
 
-  # ➕ Preparado para el futuro: tests end-to-end (Selenium)
-  # e2e-tests:
-  #   name: E2E tests (Selenium)
-  #   runs-on: ubuntu-latest
-  #   needs: [backend-tests, frontend-tests]
-  #
-  #   steps:
-  #     - name: Checkout repo
-  #       uses: actions/checkout@v4
-  #
-  #     - name: Setup Node
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 20
-  #
-  #     - name: Install deps (e2e)
-  #       run: |
-  #         cd e2e
-  #         npm ci
-  #
-  #     - name: Run Selenium tests
-  #       run: |
-  #         cd e2e
-  #         npm test      # aquí lanzarías los scripts grabados con Selenium
+          # D) TABLA PLAN_SUB (Depende de plataforma y grupo)
+          psql -h localhost -U postgres -d fragments -c "
+            CREATE TABLE IF NOT EXISTS plan_sub (
+              id_plan SERIAL PRIMARY KEY,
+              id_plataforma INTEGER REFERENCES plataforma(id_plataforma),
+              precio_plan NUMERIC,
+              fecha_vencimiento DATE,
+              id_grupo INTEGER REFERENCES grupo(id_grupo),
+              nmiembros INTEGER
+            );
+          "
+
+          # E) TABLA MIEMBRO_GRUPO (Depende de grupo y usuario)
+          psql -h localhost -U postgres -d fragments -c "
+            CREATE TABLE IF NOT EXISTS miembro_grupo (
+              id_grupo INTEGER REFERENCES grupo(id_grupo),
+              id_usuario INTEGER REFERENCES usuario(id_usuario),
+              fecha_ingreso DATE DEFAULT CURRENT_DATE,
+              PRIMARY KEY (id_grupo, id_usuario)
+            );
+          "
+
+          # F) TABLA CARTERA (Depende de usuario)
+          psql -h localhost -U postgres -d fragments -c "
+            CREATE TABLE IF NOT EXISTS cartera (
+              id_usuario INTEGER PRIMARY KEY REFERENCES usuario(id_usuario),
+              saldo NUMERIC DEFAULT 0
+            );
+          "
+
+          # G) TABLA TRANSACCION (Por si acaso se consulta)
+          psql -h localhost -U postgres -d fragments -c "
+            CREATE TABLE IF NOT EXISTS transaccion (
+              id_transaccion SERIAL PRIMARY KEY,
+              id_plan_sub INTEGER REFERENCES plan_sub(id_plan),
+              id_usuario_origen INTEGER REFERENCES usuario(id_usuario),
+              id_usuario_final INTEGER REFERENCES usuario(id_usuario),
+              precio NUMERIC,
+              comision NUMERIC,
+              fecha_trans DATE DEFAULT CURRENT_DATE
+            );
+          "
+
+          # -----------------------------------------------------------
+          # 2. ARRANCAR BACKEND (Y dejarlo vivo)
+          # -----------------------------------------------------------
+          cd backend
+          npm install
+          export PORT=3000
+          export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fragments
+          export JWT_SECRET="secreto_super_seguro_para_tests_en_ci"
+          npm run dev &
+          cd ..
+
+          # -----------------------------------------------------------
+          # 3. ARRANCAR FRONTEND (Y dejarlo vivo)
+          # -----------------------------------------------------------
+          cd frontend/frangments-web
+          npm install
+          echo "VITE_API_URL=http://localhost:3000" > .env
+          npm run dev -- --host & 
+          cd ../..
+
+          # -----------------------------------------------------------
+          # 4. ESPERAR A QUE AMBOS RESPONDAN
+          # -----------------------------------------------------------
+          npx wait-on tcp:3000 tcp:5173 --timeout 60000
+
+          # -----------------------------------------------------------
+          # 5. REGISTRAR USUARIO
+          # -----------------------------------------------------------
+          curl --fail -X POST http://localhost:3000/api/users \
+            -H "Content-Type: application/json" \
+            -d '{"nombre": "Pedrito", "email": "pedrito@gmail.com", "telefono": "666777888", "password": "Pedrito", "tipo": "normal"}'
+
+          # -----------------------------------------------------------
+          # 6. LANZAR SELENIUM
+          # -----------------------------------------------------------
+          cd tests_e2e
+          npm install selenium-webdriver mocha
+          export CI=true
+          npx mocha "*.js" --timeout 60000

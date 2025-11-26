@@ -95,30 +95,62 @@ export const planSubRepo = {
     );
     return rows;
   },
-  // NUEVO: planes activos de una plataforma concreta
-  async getActivePlansByPlatformId(id_plataforma: number) {
-    try {
-      const { rows } = await db.query(
-        `SELECT
-           ps.id_plan                    AS id_plan,
-           ps.precio_plan                AS precio_mensual,
-           ps.fecha_vencimiento          AS fecha_vencimiento,
-           g.id_grupo                    AS id_grupo,
-           g.nombre                      AS nombre_grupo
-         FROM plan_sub ps
-         JOIN grupo g ON g.id_grupo = ps.id_grupo
-         WHERE ps.id_plataforma = $1
-           AND ps.fecha_vencimiento >= NOW()
-           AND g.estado = 'abierto'
-         ORDER BY ps.precio_plan ASC`,
-        [id_plataforma]
-      );
-      return rows;
-    } catch (error) {
-      console.error("Error obteniendo planes activos:", error);
-      throw new Error("No se pudieron obtener los planes activos");
-    }
-  },
+
+  async getActivePlansByPlatformId(
+  id_plataforma: number,
+  id_usuario: number
+) {
+  try {
+    const { rows } = await db.query(
+      `
+      SELECT
+        ps.id_plan                        AS id_plan,
+        ps.precio_plan                    AS precio_total_mensual,
+        ps.nmiembros                      AS capacidad_total,
+        ps.fecha_vencimiento              AS fecha_vencimiento,
+        g.id_grupo                        AS id_grupo,
+        g.nombre                          AS nombre_grupo,
+
+        COALESCE(COUNT(mg.id_usuario), 0) AS miembros_actuales,
+
+        CASE
+          WHEN COUNT(mg.id_usuario) = 0
+            THEN ps.precio_plan
+          ELSE ps.precio_plan / (COUNT(mg.id_usuario) + 1)
+        END                               AS precio_por_usuario
+      FROM plan_sub ps
+      JOIN grupo g
+        ON g.id_grupo = ps.id_grupo
+      LEFT JOIN miembro_grupo mg               -- para contar miembros
+        ON mg.id_grupo = g.id_grupo
+      LEFT JOIN miembro_grupo mgu              -- para saber si ESTE usuario ya está dentro
+        ON mgu.id_grupo = g.id_grupo
+       AND mgu.id_usuario = $2
+      WHERE ps.id_plataforma = $1
+        AND ps.fecha_vencimiento >= NOW()
+        AND g.estado = 'abierto'
+        AND mgu.id_usuario IS NULL            -- ❌ excluir grupos donde ya es miembro
+      GROUP BY
+        ps.id_plan,
+        ps.precio_plan,
+        ps.nmiembros,
+        ps.fecha_vencimiento,
+        g.id_grupo,
+        g.nombre
+      HAVING COUNT(mg.id_usuario) < ps.nmiembros   -- ❌ excluir grupos llenos
+      ORDER BY precio_por_usuario ASC;
+      `,
+      [id_plataforma, id_usuario]
+    );
+
+    return rows;
+  } catch (error) {
+    console.error("Error obteniendo planes activos:", error);
+    throw new Error("No se pudieron obtener los planes activos");
+  }
+}
+
+,
   // obtener un plan concreto (para el "unirme")
   async getPlanById(id_plan: number) {
     try {

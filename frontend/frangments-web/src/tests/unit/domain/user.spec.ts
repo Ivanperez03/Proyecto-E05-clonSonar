@@ -10,9 +10,7 @@ describe("User.fromDTO", () => {
       telefono: "123456789",
       tipo: "normal",
     };
-
     const user = User.fromDTO(dto);
-
     expect(user.id).toBe(5);
     expect(user.nombre).toBe("Oscar");
     expect(user.email).toBe("oscar@test.com");

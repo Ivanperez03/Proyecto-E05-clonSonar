@@ -17,7 +17,6 @@ describe("useAccountStore", () => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
   });
-
   it("userData rellena saldo, grupos y suscripciones y gestiona loading", async () => {
     (accountService.getUserData as any).mockResolvedValueOnce({
       saldo: 25,
@@ -31,14 +30,10 @@ describe("useAccountStore", () => {
         },
       ],
     });
-
     const store = useAccountStore();
-
     const p = store.userData();
     expect(store.loading).toBe(true);
-
     await p;
-
     expect(accountService.getUserData).toHaveBeenCalled();
     expect(store.loading).toBe(false);
     expect(store.saldo).toBe(25);
