@@ -74,6 +74,7 @@ export const planSubRepo = {
       throw new Error("No se pudieron obtener las plataformas");
     }
   },
+
 async getActiveSubscriptionsByUserId(id_usuario: number) {
   const { rows } = await db.query(
     `
@@ -82,21 +83,40 @@ async getActiveSubscriptionsByUserId(id_usuario: number) {
       ps.precio_plan,
       ps.fecha_vencimiento,
       ps.nmiembros                    AS capacidad_total,
-      ps.fecha_inicio_cobro,          -- ⬅️ nuevo
+      ps.fecha_inicio_cobro,
       g.id_grupo,
       g.nombre                        AS nombre_grupo,
       p.id_plataforma,
       p.nombre                        AS plataforma,
 
       COUNT(mg2.id_usuario)           AS miembros_actuales,
-      ROUND(ps.precio_plan::numeric / COUNT(mg2.id_usuario), 2) AS precio_por_usuario
+
+      CASE
+        WHEN COUNT(mg2.id_usuario) = 0
+          THEN ps.precio_plan::numeric
+        ELSE ps.precio_plan::numeric / COUNT(mg2.id_usuario)
+      END                             AS cuota_base,
+
+      ROUND(
+        (
+          CASE
+            WHEN COUNT(mg2.id_usuario) = 0
+              THEN ps.precio_plan::numeric
+            ELSE ps.precio_plan::numeric / COUNT(mg2.id_usuario)
+          END
+        ) * 1.15,
+        2
+      )                               AS precio_usuario
+
     FROM miembro_grupo mg
     JOIN grupo g       ON g.id_grupo       = mg.id_grupo
     JOIN plan_sub ps   ON ps.id_grupo      = g.id_grupo
     JOIN plataforma p  ON p.id_plataforma  = ps.id_plataforma
     LEFT JOIN miembro_grupo mg2 ON mg2.id_grupo = g.id_grupo
+
     WHERE mg.id_usuario = $1
       AND ps.fecha_vencimiento >= NOW()
+
     GROUP BY
       ps.id_plan,
       ps.precio_plan,
@@ -107,17 +127,16 @@ async getActiveSubscriptionsByUserId(id_usuario: number) {
       g.nombre,
       p.id_plataforma,
       p.nombre
+
     ORDER BY ps.fecha_vencimiento;
     `,
     [id_usuario]
   );
 
   return rows;
-}
+},
 
-,
-
-  async getActivePlansByPlatformId(
+async getActivePlansByPlatformId(
   id_plataforma: number,
   id_usuario: number
 ) {
@@ -136,13 +155,25 @@ async getActiveSubscriptionsByUserId(id_usuario: number) {
 
         CASE
           WHEN COUNT(mg.id_usuario) = 0
-            THEN ps.precio_plan
-          ELSE ps.precio_plan / (COUNT(mg.id_usuario) + 1)
-        END                               AS precio_por_usuario
+            THEN ps.precio_plan::numeric
+          ELSE ps.precio_plan::numeric / (COUNT(mg.id_usuario) + 1)
+        END                               AS cuota_base,
+
+        ROUND(
+          (
+            CASE
+              WHEN COUNT(mg.id_usuario) = 0
+                THEN ps.precio_plan::numeric
+              ELSE ps.precio_plan::numeric / (COUNT(mg.id_usuario) + 1)
+            END
+          ) * 1.15,
+          2
+        )                                 AS precio_por_usuario
+
       FROM plan_sub ps
       JOIN grupo g
         ON g.id_grupo = ps.id_grupo
-      LEFT JOIN miembro_grupo mg               -- para contar miembros
+      LEFT JOIN miembro_grupo mg               -- para contar miembros actuales
         ON mg.id_grupo = g.id_grupo
       LEFT JOIN miembro_grupo mgu              -- para saber si ESTE usuario ya está dentro
         ON mgu.id_grupo = g.id_grupo
@@ -150,7 +181,7 @@ async getActiveSubscriptionsByUserId(id_usuario: number) {
       WHERE ps.id_plataforma = $1
         AND ps.fecha_vencimiento >= NOW()
         AND g.estado = 'abierto'
-        AND mgu.id_usuario IS NULL            -- ❌ excluir grupos donde ya es miembro
+        AND mgu.id_usuario IS NULL            -- excluir grupos donde ya es miembro
       GROUP BY
         ps.id_plan,
         ps.precio_plan,
@@ -158,7 +189,7 @@ async getActiveSubscriptionsByUserId(id_usuario: number) {
         ps.fecha_vencimiento,
         g.id_grupo,
         g.nombre
-      HAVING COUNT(mg.id_usuario) < ps.nmiembros   -- ❌ excluir grupos llenos
+      HAVING COUNT(mg.id_usuario) < ps.nmiembros   -- excluir grupos llenos
       ORDER BY precio_por_usuario ASC;
       `,
       [id_plataforma, id_usuario]
@@ -170,6 +201,7 @@ async getActiveSubscriptionsByUserId(id_usuario: number) {
     throw new Error("No se pudieron obtener los planes activos");
   }
 }
+
 
 ,
   // obtener un plan concreto (para el "unirme")
