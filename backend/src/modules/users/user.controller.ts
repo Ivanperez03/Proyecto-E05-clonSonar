@@ -7,6 +7,22 @@ import { carteraRepo } from "../cartera/cartera.repository";
 import { planSubRepo } from "../plan_sub/plan_sub.repositoy";
 import { grupoRepo } from '../grupo/grupo.repository';
 
+const MS_31D = 31 * 24 * 60 * 60 * 1000;
+
+function calcularProximoCobro(fechaInicioCobro: Date): Date {
+  const ahora = Date.now();
+  const start = fechaInicioCobro.getTime();
+
+  if (ahora <= start) {
+    return new Date(start + MS_31D);
+  }
+
+  const diff = ahora - start;
+  const periodosTranscurridos = Math.floor(diff / MS_31D) + 1;
+
+  return new Date(start + periodosTranscurridos * MS_31D);
+}
+
 export const userController = {
   async register(req: Request, res: Response) {
     try {
@@ -96,11 +112,19 @@ export const userController = {
 
     const id_usuario = u.id_usuario;
 
-    const [cartera, grupos, suscripciones] = await Promise.all([
+    const [cartera, grupos, suscripcionesRaw] = await Promise.all([
       carteraRepo.findByUserId(id_usuario),
       grupoRepo.getGruposByUserId(id_usuario),
       planSubRepo.getActiveSubscriptionsByUserId(id_usuario),
     ]);
+
+    const suscripciones = suscripcionesRaw.map((s: any) => {
+    const proximoCobro = calcularProximoCobro(new Date(s.fecha_inicio_cobro)); 
+    return {
+        ...s,
+        proximo_cobro: proximoCobro.toISOString(),
+      };
+    });
 
     res.json({
       user: {

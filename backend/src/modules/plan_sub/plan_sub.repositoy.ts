@@ -74,27 +74,48 @@ export const planSubRepo = {
       throw new Error("No se pudieron obtener las plataformas");
     }
   },
-  async getActiveSubscriptionsByUserId(id_usuario: number) {
-    const { rows } = await db.query(
-      `SELECT
-          ps.id_plan,
-          ps.precio_plan,
-          ps.fecha_vencimiento,
-          g.id_grupo,
-          g.nombre       AS nombre_grupo,
-          p.id_plataforma,
-          p.nombre       AS plataforma
-       FROM miembro_grupo mg
-       JOIN grupo g       ON g.id_grupo = mg.id_grupo
-       JOIN plan_sub ps   ON ps.id_grupo = g.id_grupo
-       JOIN plataforma p  ON p.id_plataforma = ps.id_plataforma
-       WHERE mg.id_usuario = $1
-         AND ps.fecha_vencimiento >= NOW()
-       ORDER BY ps.fecha_vencimiento`,
-      [id_usuario]
-    );
-    return rows;
-  },
+async getActiveSubscriptionsByUserId(id_usuario: number) {
+  const { rows } = await db.query(
+    `
+    SELECT
+      ps.id_plan,
+      ps.precio_plan,
+      ps.fecha_vencimiento,
+      ps.nmiembros                    AS capacidad_total,
+      ps.fecha_inicio_cobro,          -- ⬅️ nuevo
+      g.id_grupo,
+      g.nombre                        AS nombre_grupo,
+      p.id_plataforma,
+      p.nombre                        AS plataforma,
+
+      COUNT(mg2.id_usuario)           AS miembros_actuales,
+      ROUND(ps.precio_plan::numeric / COUNT(mg2.id_usuario), 2) AS precio_por_usuario
+    FROM miembro_grupo mg
+    JOIN grupo g       ON g.id_grupo       = mg.id_grupo
+    JOIN plan_sub ps   ON ps.id_grupo      = g.id_grupo
+    JOIN plataforma p  ON p.id_plataforma  = ps.id_plataforma
+    LEFT JOIN miembro_grupo mg2 ON mg2.id_grupo = g.id_grupo
+    WHERE mg.id_usuario = $1
+      AND ps.fecha_vencimiento >= NOW()
+    GROUP BY
+      ps.id_plan,
+      ps.precio_plan,
+      ps.fecha_vencimiento,
+      ps.nmiembros,
+      ps.fecha_inicio_cobro,
+      g.id_grupo,
+      g.nombre,
+      p.id_plataforma,
+      p.nombre
+    ORDER BY ps.fecha_vencimiento;
+    `,
+    [id_usuario]
+  );
+
+  return rows;
+}
+
+,
 
   async getActivePlansByPlatformId(
   id_plataforma: number,
@@ -170,4 +191,26 @@ export const planSubRepo = {
       throw new Error("No se pudo obtener el plan");
     }
   },
+
+  async getAllActivePlans() {
+  const { rows } = await db.query(
+    `
+    SELECT
+      ps.id_plan,
+      ps.id_grupo,
+      ps.id_plataforma,
+      ps.precio_plan,
+      ps.fecha_vencimiento,
+      ps.nmiembros,
+      g.fecha_creacion AS fecha_inicio_cobro
+    FROM plan_sub ps
+    JOIN grupo g ON g.id_grupo = ps.id_grupo
+    WHERE ps.fecha_vencimiento >= NOW()
+      AND g.estado = 'abierto'
+    `
+  );
+
+  return rows;
+}
+
 };

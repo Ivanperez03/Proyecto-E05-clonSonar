@@ -59,6 +59,8 @@
             {{ sub.nombre }} – {{ sub.precio }}€  
             <br />
             <span class="sub-fecha">Vence: {{ sub.fechaVencimiento }}</span>
+            <br />
+            <span class="sub-fecha">Próximo cobro: {{ sub.proximoCobro }}</span>
           </li>
 
           <li v-if="account.suscripciones.length === 0">

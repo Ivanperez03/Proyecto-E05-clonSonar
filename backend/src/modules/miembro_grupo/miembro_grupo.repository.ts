@@ -89,4 +89,13 @@ export const miembroGrupoRepo = {
       throw new Error("No se pudo comprobar el miembro del grupo");
     }
   },
+  async removeMember(id_grupo: number, id_usuario: number) {
+    await db.query(
+      `
+      DELETE FROM miembro_grupo
+      WHERE id_grupo = $1 AND id_usuario = $2
+      `,
+      [id_grupo, id_usuario]
+    );
+  },
 };
