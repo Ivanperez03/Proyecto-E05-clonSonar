@@ -38,7 +38,7 @@
             <div class="meta-item">
               <span class="meta-label">Precio total mensual </span>
               <span class="meta-value">
-                {{ plan.precioTotalMensual }} /mes€
+                {{ plan.precioTotalMensual }} € /mes
               </span>
             </div>
 

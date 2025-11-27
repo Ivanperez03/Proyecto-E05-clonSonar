@@ -79,4 +79,18 @@ export const carteraRepo = {
       throw new Error("No se pudo restar saldo");
     }
   },
+
+    async updateSaldoDelta(id_usuario: number, delta: number) {
+    const { rows } = await db.query(
+      `
+      UPDATE cartera
+      SET saldo = saldo + $2
+      WHERE id_usuario = $1
+      RETURNING *
+      `,
+      [id_usuario, delta]
+    );
+
+    return rows[0];
+  },
 };

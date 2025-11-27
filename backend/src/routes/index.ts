@@ -6,6 +6,7 @@ import grupoRouter from "../modules/grupo/grupo.router";
 import miembroGrupoRouter from "../modules/miembro_grupo/miembro_grupo.router";
 import carteraRouter from "../modules/cartera/cartera.router";
 import adminRouter from "../modules/adminfuncs/admin.router"; 
+import { billingController } from "../modules/billing/billing.controller";
 import { authMiddleware } from "../middleware/auth.middleware";
 import { userController } from "../modules/users/user.controller";
 import alertasRouter from "../modules/alertas/alertas.router"
@@ -36,5 +37,7 @@ router.use("/cartera", carteraRouter);
 router.use("/admin", adminRouter); 
 
 router.use("/alertas", alertasRouter);
+
+router.get("/jobs/run-billing", billingController.run);
 
 export default router;
