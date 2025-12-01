@@ -6,6 +6,7 @@ import { userRepo } from "./user.repository";
 import { carteraRepo } from "../cartera/cartera.repository";
 import { planSubRepo } from "../plan_sub/plan_sub.repositoy";
 import { grupoRepo } from '../grupo/grupo.repository';
+import { createAlerta } from '../alertas/alertas.repository';
 
 const MS_31D = 31 * 24 * 60 * 60 * 1000;
 
@@ -34,7 +35,16 @@ export const userController = {
       // Crear usuario pasando admin (true/false)
       const user = await userService.register({ nombre, email, telefono, password, admin: !!admin });
       await carteraRepo.createCartera(user.id_usuario);
-
+      await createAlerta({
+        id_usuario: user.id_usuario,
+        tipo: "CUENTA_CREADA",
+        titulo: "¡Bienvenido a Fragments!",
+        mensaje: `Tu cuenta se ha creado correctamente. Ya puedes unirte a grupos y compartir tus suscripciones.`,
+        id_grupo: null,
+        id_plan: null,
+        metadata: {},
+      });
+      
       res.status(201).json(user);
     } catch (e: any) {
       const msg = e?.message === 'Email o teléfono ya existe' ? e.message : 'Error registrando usuario';

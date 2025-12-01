@@ -6,4 +6,8 @@ export const billingController = {
     await billingService.runBillingNow();
     res.json({ message: "Proceso de cobro ejecutado" });
   },
+  async checkLowBalance(req: Request, res: Response) {
+    await billingService.checkLowBalance();
+    res.json({ message: "Chequeo de saldo bajo ejecutado" });
+  },
 };
