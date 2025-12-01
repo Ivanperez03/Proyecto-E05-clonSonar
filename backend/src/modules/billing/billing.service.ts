@@ -8,17 +8,26 @@ import { createAlerta } from "../alertas/alertas.repository";
 import { userRepo } from "../users/user.repository";
 
 const MS_31D = 31 * 24 * 60 * 60 * 1000;
+const WARNING_WINDOW_MS = 3 * 24 * 60 * 60 * 1000; // 3 días antes del cobro
+
+function calcularProximoCobro(
+  fechaInicioCobro: Date,
+  ultimaFechaCobro?: Date | null
+): Date {
+  const anchor = (ultimaFechaCobro ?? fechaInicioCobro).getTime();
+  return new Date(anchor + MS_31D);
+}
 
 function debeCobrarAhora(
   _fechaInicioCobro: Date,
   ultimaFechaCobro?: Date | null
 ): boolean {
-  // 1) Si nunca se ha cobrado este plan, cobramos ahora
+  // Si nunca se ha cobrado este plan, cobramos ahora
   if (!ultimaFechaCobro) {
     return true;
   }
 
-  // 2) A partir del primer cobro, cada 31 días desde el último cobro
+  // A partir del primer cobro, cada 31 días desde el último cobro
   const ahora = Date.now();
   const anchor = ultimaFechaCobro.getTime();
   const siguiente = anchor + MS_31D;
@@ -120,8 +129,8 @@ export const billingService = {
           // Validar saldo suficiente para el importe total que paga el usuario
           if (!carteraUsuario || carteraUsuario.saldo < usuarioPaga) {
             console.log(
-              "      Saldo insuficiente, expulsando del grupo"
-            );
+              "      Saldo insuficiente, expulsando del grupo");
+
 
             // Quitar del grupo
             await miembroGrupoRepo.removeMember(plan.id_grupo, m.id_usuario);
@@ -202,5 +211,103 @@ export const billingService = {
     }
 
     console.log("Proceso de cobro terminado");
+  },
+
+async checkLowBalance() {
+    console.log("🔍 Iniciando chequeo de saldo bajo...");
+
+    const planes = await planSubRepo.getAllActivePlans();
+    console.log(`📦 Planes activos encontrados: ${planes.length}`);
+
+    const ahora = Date.now();
+
+    for (const plan of planes) {
+      console.log(`\n▶️ Evaluando plan ${plan.id_plan} (grupo ${plan.id_grupo})`);
+
+      const fechaInicio = new Date(plan.fecha_inicio_cobro);
+      const ultimaTrans = await transaccionRepo.getLastByPlanId(plan.id_plan);
+      const ultimaFechaCobro = ultimaTrans ? new Date(ultimaTrans.fecha_trans) : null;
+
+      const proximoCobro = calcularProximoCobro(fechaInicio, ultimaFechaCobro);
+      const diffMs = proximoCobro.getTime() - ahora;
+
+      console.log(`   - Próximo cobro previsto: ${proximoCobro.toISOString()}`);
+
+      // Si ya se pasó o falta más de 3 días, no avisamos
+      if (diffMs <= 0 || diffMs > WARNING_WINDOW_MS) {
+        console.log("   ⏭ No entra en ventana de aviso de saldo bajo");
+        continue;
+      }
+
+      const grupo = await grupoRepo.findById(plan.id_grupo);
+      if (!grupo) {
+        console.log("   ⚠️ Grupo no encontrado, salto");
+        continue;
+      }
+
+      const miembros = await miembroGrupoRepo.getMembersByGroup(plan.id_grupo);
+      console.log(`   👥 Miembros en el grupo: ${miembros.length}`);
+      if (!miembros.length) continue;
+
+      const idJefe = grupo.id_jefe;
+      if (!idJefe) {
+        console.log("   ⚠️ Grupo sin jefe definido, salto");
+        continue;
+      }
+
+      const totalSlots = miembros.length;
+      if (totalSlots <= 1) {
+        console.log("   ⚠️ Solo está el jefe, no hay a quién avisar");
+        continue;
+      }
+
+      const cuotaBase = Number((plan.precio_plan / totalSlots).toFixed(2));
+      console.log(`   💰 Cuota base por plaza: ${cuotaBase}€`);
+
+      for (const m of miembros) {
+        if (m.id_usuario === idJefe) {
+          console.log(`   -> Miembro ${m.id_usuario} es jefe, salto`);
+          continue;
+        }
+
+        const base = cuotaBase;
+        const usuarioPaga = Number((base * 1.15).toFixed(2)); // lo que SE LE COBRARÁ
+        const carteraUsuario = await carteraRepo.findByUserId(m.id_usuario);
+        const saldo = carteraUsuario?.saldo ?? 0;
+
+        console.log(
+          `   -> Usuario ${m.id_usuario} — saldo: ${saldo}€, necesita: ${usuarioPaga}€`
+        );
+
+        if (saldo >= usuarioPaga) {
+          console.log("      ✅ Tiene saldo suficiente, sin alerta");
+          continue;
+        }
+
+        // 🔔 Crear alerta de saldo bajo (AVISO PREVIO, sin expulsar)
+        await createAlerta({
+          id_usuario: m.id_usuario,
+          tipo: "SALDO_BAJO",
+          titulo: "Tu saldo es insuficiente para la próxima suscripción",
+          mensaje: `Tu saldo actual es de ${saldo.toFixed(
+            2
+          )}€, pero necesitas ${usuarioPaga.toFixed(
+            2
+          )}€ para el próximo cobro del grupo "${grupo.nombre}". Añade saldo para evitar ser expulsado cuando llegue el cobro.`,
+          id_grupo: plan.id_grupo,
+          id_plan: plan.id_plan,
+          metadata: {
+            saldo_actual: saldo,
+            importe_necesario: usuarioPaga,
+            cuota_base: base,
+            fecha_proximo_cobro: proximoCobro.toISOString(),
+          },
+        });
+
+        console.log("      ⚠️ Alerta SALDO_BAJO creada para el usuario");
+      }
+    }
+
+    console.log("✅ Chequeo de saldo bajo terminado");
   },
 };

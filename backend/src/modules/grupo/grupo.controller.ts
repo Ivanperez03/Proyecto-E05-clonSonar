@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { grupoRepo } from "../grupo/grupo.repository"; 
 import { miembroGrupoRepo } from "../miembro_grupo/miembro_grupo.repository";
 import { userRepo } from "../users/user.repository";
+import { createAlerta } from "../alertas/alertas.repository";
 
 export const grupoController = {
 async createGroup(req: Request, res: Response) {
@@ -23,6 +24,17 @@ async createGroup(req: Request, res: Response) {
       id_usuario: jefe.id_usuario,
       id_grupo: group.id_grupo
     });    
+
+    await createAlerta({
+      id_usuario: jefe.id_usuario,
+      tipo: "GRUPO_CREADO",
+      titulo: "Has creado un nuevo grupo",
+      mensaje: `Has creado el grupo "${group.nombre}" con la suscripción, ya puedes empezar a compartirla.`,
+      id_grupo: group.id_grupo,
+      id_plan: null,
+      metadata: {},
+    });
+
     return res.status(201).json({
       message: "Grupo creado con éxito",
       group,
@@ -34,7 +46,7 @@ async createGroup(req: Request, res: Response) {
       error: error.message,
     });
   }
-  },
+},
   
   async getAllGroups(req: Request, res: Response) {
     try {

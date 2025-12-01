@@ -40,7 +40,7 @@ async getActivePlansForPlatform(req: Request, res: Response) {
       return res.status(400).json({ message: "id_plataforma inválido" });
     }
 
-    // ⬇️ sacar usuario desde el JWT
+    // sacar usuario desde el JWT
     const jwtPayload = (req as any).jwt as { email: string };
     if (!jwtPayload?.email) {
       return res.status(401).json({ message: "No autorizado" });
@@ -111,6 +111,40 @@ async getActivePlansForPlatform(req: Request, res: Response) {
       });
 
       // aqui se podria añadir que le llegue una alerta tmb al jefe del grupo
+      // si o que flaqui 
+
+      if (grupo?.id_jefe) {
+        await createAlerta({
+          id_usuario: grupo.id_jefe,
+          tipo: "NUEVO_MIEMBRO_GRUPO",
+          titulo: "Nuevo miembro en tu grupo",
+          mensaje: `${user.nombre} se ha unido a tu grupo "${nombreGrupo}".`,
+          id_grupo: plan.id_grupo,
+          id_plan: plan.id_plan,
+          metadata: {
+            id_usuario_nuevo: id_usuario,
+            nombre_usuario_nuevo: user.nombre,
+            plataforma: plan.nombre_plataforma ?? null,
+          },
+        });
+      }
+      
+      // Recalcular miembros del grupo tras la nueva alta
+      const miembrosGrupo = await miembroGrupoRepo.getMembersByGroup(plan.id_grupo);
+      if (plan.nmiembros && miembrosGrupo.length >= plan.nmiembros && grupo?.id_jefe) {
+      await createAlerta({
+        id_usuario: grupo.id_jefe,
+        tipo: "GRUPO_LLENO",
+        titulo: "Tu grupo está completo",
+        mensaje: `Tu grupo "${nombreGrupo}" ha alcanzado el número máximo de miembros (${plan.nmiembros}). Ya no se pueden unir más usuarios.`,
+        id_grupo: plan.id_grupo,
+        id_plan: plan.id_plan,
+        metadata: {
+          capacidad: plan.nmiembros,
+          miembros_actuales: miembrosGrupo.length,
+          },
+        });
+      }
       
       return res.status(201).json({ message: "Te has unido al grupo correctamente", id_grupo: plan.id_grupo });
     } catch (error: any) {

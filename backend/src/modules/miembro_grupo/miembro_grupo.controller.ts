@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { miembroGrupoRepo } from "./miembro_grupo.repository";  
+import { createAlerta } from "../alertas/alertas.repository";
 
 export const miembroGrupoController = {
   // Agregar un miembro a un grupo
@@ -36,7 +37,7 @@ export const miembroGrupoController = {
   // Eliminar un miembro de un grupo
   async removeMember(req: Request, res: Response) {
     const { id_grupo, id_usuario } = req.body;
-
+    
     try {
       const member = await miembroGrupoRepo.removeMemberFromGroup({ id_grupo, id_usuario });
       return res.json({

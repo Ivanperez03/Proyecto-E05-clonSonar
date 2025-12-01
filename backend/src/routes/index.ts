@@ -39,5 +39,6 @@ router.use("/admin", adminRouter);
 router.use("/alertas", alertasRouter);
 
 router.get("/jobs/run-billing", billingController.run);
+router.get("/jobs/check-low-balance", billingController.checkLowBalance);
 
 export default router;
