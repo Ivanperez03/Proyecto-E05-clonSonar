@@ -16,37 +16,46 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
       
-      # BACKEND
+      # --- BACKEND (Vitest) ---
       - name: Backend Tests & Coverage
         working-directory: ./backend
         run: |
           npm install
-          # Añadimos --coverage para generar el reporte
-          npm test -- --coverage
-      
-      - name: Upload Backend Coverage to Coveralls
+          # Esto ahora ejecutará "vitest run --coverage..." gracias al cambio en package.json
+          npm test 
+          
+      - name: Debug Backend Coverage (Verificar archivo)
+        run: |
+          echo "Buscando archivo lcov..."
+          ls -R coverage || echo "No se encontró la carpeta coverage"
+
+      - name: Upload Backend Coverage
         uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: ./backend/coverage/lcov.info
+          path-to-lcov: backend/coverage/lcov.info
           flag-name: backend
-          base-path: ./backend
+          base-path: backend
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
 
-      # FRONTEND
+      # --- FRONTEND (Vitest) ---
       - name: Frontend Tests & Coverage
         working-directory: ./frontend/frangments-web
         run: |
           npm install
-          # Añadimos --coverage para generar el reporte
-          npm run test:unit -- --coverage
+          # Esto ejecutará "vitest run ... --coverage"
+          npm run test:unit
 
-      - name: Upload Frontend Coverage to Coveralls
+      - name: Upload Frontend Coverage
         uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: ./frontend/frangments-web/coverage/lcov.info
+          path-to-lcov: frontend/frangments-web/coverage/lcov.info
           flag-name: frontend
-          base-path: ./frontend/frangments-web
+          base-path: frontend/frangments-web
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
 
   # 2. E2E TESTS (FULL STACK)
   e2e-tests:
