@@ -14,7 +14,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20 }
+        with:
+          node-version: 20
       
       - name: Backend Tests
         working-directory: ./backend
@@ -33,7 +34,6 @@ jobs:
     name: E2E Selenium Tests
     runs-on: ubuntu-latest
     needs: [unit-tests]
-
     services:
       postgres:
         image: postgres:15
@@ -61,7 +61,6 @@ jobs:
       - name: Run Full Stack E2E
         run: |
           # 1. PREPARAR BASE DE DATOS 
-
           export PGPASSWORD=postgres
           
           # A) TABLA USUARIO
@@ -76,7 +75,7 @@ jobs:
             );
           "
 
-          # B) TABLA PLATAFORMA (Necesaria antes de plan_sub)
+          # B) TABLA PLATAFORMA
           psql -h localhost -U postgres -d fragments -c "
             CREATE TABLE IF NOT EXISTS plataforma (
               id_plataforma SERIAL PRIMARY KEY,
@@ -84,7 +83,7 @@ jobs:
             );
           "
 
-          # C) TABLA GRUPO (Depende de usuario por id_jefe)
+          # C) TABLA GRUPO
           psql -h localhost -U postgres -d fragments -c "
             CREATE TABLE IF NOT EXISTS grupo (
               id_grupo SERIAL PRIMARY KEY,
@@ -95,7 +94,7 @@ jobs:
             );
           "
 
-          # D) TABLA PLAN_SUB (Depende de plataforma y grupo)
+          # D) TABLA PLAN_SUB
           psql -h localhost -U postgres -d fragments -c "
             CREATE TABLE IF NOT EXISTS plan_sub (
               id_plan SERIAL PRIMARY KEY,
@@ -107,7 +106,7 @@ jobs:
             );
           "
 
-          # E) TABLA MIEMBRO_GRUPO (Depende de grupo y usuario)
+          # E) TABLA MIEMBRO_GRUPO
           psql -h localhost -U postgres -d fragments -c "
             CREATE TABLE IF NOT EXISTS miembro_grupo (
               id_grupo INTEGER REFERENCES grupo(id_grupo),
@@ -117,7 +116,7 @@ jobs:
             );
           "
 
-          # F) TABLA CARTERA (Depende de usuario)
+          # F) TABLA CARTERA
           psql -h localhost -U postgres -d fragments -c "
             CREATE TABLE IF NOT EXISTS cartera (
               id_usuario INTEGER PRIMARY KEY REFERENCES usuario(id_usuario),
@@ -125,7 +124,7 @@ jobs:
             );
           "
 
-          # G) TABLA TRANSACCION (Por si acaso se consulta)
+          # G) TABLA TRANSACCION
           psql -h localhost -U postgres -d fragments -c "
             CREATE TABLE IF NOT EXISTS transaccion (
               id_transaccion SERIAL PRIMARY KEY,
@@ -147,7 +146,7 @@ jobs:
           npm run dev &
           cd ..
 
-          # 3. ARRANCAR FRONTEND (Y dejarlo vivo)
+          # 3. ARRANCAR FRONTEND
           cd frontend/frangments-web
           npm install
           echo "VITE_API_URL=http://localhost:3000" > .env
@@ -162,9 +161,7 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{"nombre": "Pedrito", "email": "pedrito@gmail.com", "telefono": "666777888", "password": "Pedrito", "tipo": "normal"}'
 
-          # -----------------------------------------------------------
           # 6. LANZAR SELENIUM
-          # -----------------------------------------------------------
           cd tests_e2e
           npm install selenium-webdriver mocha
           export CI=true
@@ -174,17 +171,14 @@ jobs:
   sonarcloud:
     name: SonarCloud Analysis
     runs-on: ubuntu-latest
-    needs: [unit-tests]   
-
+    needs: [unit-tests]
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   
-
+          fetch-depth: 0 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
         env:
