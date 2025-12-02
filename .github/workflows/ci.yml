@@ -8,26 +8,46 @@ on:
 
 jobs:
   # 1. UNIT TESTS
+  # 1. UNIT TESTS
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: 20
+        with: { node-version: 20 }
       
-      - name: Backend Tests
+      # BACKEND
+      - name: Backend Tests & Coverage
         working-directory: ./backend
         run: |
           npm install
-          npm test
-          
-      - name: Frontend Tests
+          # Añadimos --coverage para generar el reporte
+          npm test -- --coverage
+      
+      - name: Upload Backend Coverage to Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: ./backend/coverage/lcov.info
+          flag-name: backend
+          base-path: ./backend
+
+      # FRONTEND
+      - name: Frontend Tests & Coverage
         working-directory: ./frontend/frangments-web
         run: |
           npm install
-          npm run test:unit
+          # Añadimos --coverage para generar el reporte
+          npm run test:unit -- --coverage
+
+      - name: Upload Frontend Coverage to Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: ./frontend/frangments-web/coverage/lcov.info
+          flag-name: frontend
+          base-path: ./frontend/frangments-web
 
   # 2. E2E TESTS (FULL STACK)
   e2e-tests:
