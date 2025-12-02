@@ -11,3 +11,15 @@ body {
 a {
   color: inherit;
 }
+
+/* Ocultar scrollbars en toda la aplicación */
+html, body {
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* Internet Explorer y Edge antiguos */
+}
+
+/* Chrome, Safari, Edge modernos */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}

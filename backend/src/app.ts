@@ -1,20 +1,21 @@
 import express from 'express';
 import cors from 'cors';
-import { router } from './routes/index';
-import { errorHandler } from './middleware/errorHandler';
+import cookieParser from 'cookie-parser';
+import { ENV } from './config/env';
+import routes from "./routes";
 
-export const app = express();
+const app = express();
 
-app.use(cors());
+// Configurar CORS con cookies
+app.use(
+  cors({
+    origin: "http://localhost:5173", 
+    credentials: true,               // Permite envío de cookies
+  })
+);
+
 app.use(express.json());
+app.use(cookieParser());
+app.use("/api", routes); 
 
-// Rutas principales bajo /api
-app.use('/api', router);
-
-// Healthcheck
-app.get('/health', (_req, res) => {
-  res.json({ ok: true });
-});
-
-// Middleware de errores (ultimo si o si )
-app.use(errorHandler);
+export default app;
