@@ -7,7 +7,7 @@
     "dev": "ts-node-dev --respawn --transpile-only server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "vitest --run",
+    "test": "vitest run --coverage --reporter=lcov --reporter=text",
     "test:watch": "vitest"
   },
   "keywords": [],

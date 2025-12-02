@@ -14,7 +14,7 @@
     "type-check": "vue-tsc --build",
     "lint": "eslint . --fix --cache",
     "format": "prettier --write src/",
-    "test:unit": "vitest --environment jsdom",
+    "test:unit": "vitest run --environment jsdom --coverage --reporter=lcov --reporter=text",
     "test": "vitest"
   },
   "dependencies": {
