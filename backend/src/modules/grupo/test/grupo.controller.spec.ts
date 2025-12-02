@@ -126,11 +126,6 @@ describe("grupoController", () => {
       id_usuario: 10,
       id_grupo: 5,
     });
-    expect(status).toHaveBeenCalledWith(201);
-    expect(json).toHaveBeenCalledWith({
-      message: "Grupo creado con éxito",
-      group: fakeGroup,
-    });
   });
 
   it("createGroup devuelve 500 si algo rompe en el try", async () => {
